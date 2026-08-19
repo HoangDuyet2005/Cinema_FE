@@ -41,7 +41,8 @@ const authReducer = (state = initialState, action) => {
     }
 
     case LOGOUT: {
-      localStorage.removeItem("user");`n      localStorage.removeItem("userInfo");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userInfo");
       return {
         ...state,
         currentUser: null,
