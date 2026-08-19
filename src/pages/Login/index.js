@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 
 import { makeStyles } from "@material-ui/core";
 import { useLocation, useHistory } from "react-router-dom";
@@ -50,7 +50,7 @@ export default function Login() {
 
   useEffect(() => {
     // đăng nhập thành công thì quay về trang trước đó
-    if (currentUser && currentUser?.data?.role !== "[ROLE_USER]") {
+    if (currentUser) {
       if (location.state === "/") {
         // nếu trang trước đó là "/" thì phải hiện loading do trang home mất nhiều thời gian tải
         dispatch({ type: LOADING_BACKTO_HOME });
@@ -59,7 +59,7 @@ export default function Login() {
         }, 50);
         return undefined;
       }
-      history.push(location.state);
+      if (location.state && location.state.startsWith("/admin") && !currentUser?.data?.role?.includes("ROLE_ADMIN")) { history.push("/"); } else if (location.state && location.state.startsWith("/staff") && !currentUser?.data?.role?.includes("ROLE_STAFF")) { history.push("/"); } else { history.push(location.state || "/"); }
     }
   }, [currentUser]);
   useEffect(() => {

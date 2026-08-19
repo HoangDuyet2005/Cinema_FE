@@ -2,91 +2,61 @@
 
 const useStyle = makeStyles(theme => ({
   root: {
-    maxWidth: 940,
-    margin: "auto",
+    padding: "30px 0 10px 0",
+    width: "100%",
   },
-  content: {
-    flexGrow: 1,
-    backgroundcolor: "#333",
-    // backgroundColor: theme.palette.background.paper,
+
+  newsCard: {
+    display: "block",
+    textDecoration: "none",
+    color: "#333",
+    "&:hover": {
+      textDecoration: "none",
+      "& $fullImg": {
+        transform: "translateY(-4px) scale(1.02)",
+      },
+      "& $newsTitle": {
+        color: "#034ea2",
+      },
+    },
+  },
+
+  imgWrapper: {
+    borderRadius: 8,
+    overflow: "hidden",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
   },
 
   fullImg: {
-    width: '100%',
-    height: 'auto',
-    borderRadius: 5,
+    width: "100%",
+    height: 220,
+    objectFit: "cover",
+    borderRadius: 8,
+    transition: "transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
   },
 
-  fullImgNho:{
-    width: '6rem',
-    height: '4rem',
-    borderRadius: 5,
+  newsTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#222",
+    lineHeight: 1.4,
+    margin: "8px 0 0 0",
+    display: "-webkit-box",
+    "-webkit-line-clamp": 2,
+    "-webkit-box-orient": "vertical",
+    overflow: "hidden",
+    transition: "color 0.25s ease",
   },
 
-  appBar: {
-    backgroundColor: 'transparent',
-    color: 'black',
-    boxShadow: 'none',
-    '& .MuiTabs-indicator': {
-      height: 0, // ẩn gạch dưới
-    }
-  },
-
-  tabButton: {
-    opacity: 1,
-    color: "#333",
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    '& > span': {
-      transition: "all 0.2s",
-      '&:hover': {
-        fontSize: "18px",
-      },
-    }
-  },
-
-  tabSelected: {
-    color: "#e87722",
-  },
-
-  news: {
-    color: 'black',
-    '&:hover': {
-      color: 'black',
-      textDecoration: 'none',
-    },
-    '& div': {
-      '& h4': {
-        fontSize: '17px',
-        fontWeight: 'bold'
-      },
-      '& p': {
-        fontSize: '13px'
-      }
-    },
-
-
-  },
-
-  bonusNews: {
-    color: 'black',
-    '&:hover': {
-      color: 'black',
-      textDecoration: 'none',
-    },
-    '& p': {
-      fontSize: '13px',
-    }
-  },
   repons: {
-    paddingLeft: 16,
+    padding: "0 10px",
     flex: "0 0 50%",
     maxWidth: "50%",
     [theme.breakpoints.down(579)]: {
       flex: "0 0 100%",
       maxWidth: "100%",
-      paddingLeft: 0,
+      padding: 0,
     },
   },
-
 }))
 export default useStyle

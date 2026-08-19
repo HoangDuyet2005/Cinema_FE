@@ -1,5 +1,4 @@
-import { useState } from "react";
-import Swal from "sweetalert2";
+﻿import Swal from "sweetalert2";
 import usersApi from "../../api/usersApi";
 import {
   LOGIN_REQUEST,
@@ -11,31 +10,54 @@ import {
   REGISTER_FAIL,
   RESET_ERROR_LOGIN_REGISTER,
 } from "../constants/Auth";
+import { GET_INFO_USER_SUCCESS } from "../constants/UsersManagement";
 
-export const login = (user) => { // đăng nhập
-  return async (dispatch, getState) => { //     1
-    try {//2
-      const stateBefore = getState();//   3
-      // console.log("Todos before dispatch: ", stateBefore.authReducer);  //4
-
-      dispatch({          //5
+export const login = (user) => {
+  return async (dispatch, getState) => {
+    try {
+      dispatch({
         type: LOGIN_REQUEST,
       });
-      const result = await usersApi.postDangNhap(user);     //6
-      // console.log("User nhập:---------",result.data);       //7
+      const result = await usersApi.postDangNhap(user);
+      const tokenData = result.data;
       
-      localStorage.setItem(       //8
-        "user",
-        JSON.stringify({ ...result.data, avtIdUser: result.data.username })
-      );
+      // Save initial token so subsequent requests have auth header
+      localStorage.setItem("user", JSON.stringify(tokenData));
 
-      dispatch({          //9
-        type: LOGIN_SUCCESS,
-        payload: {
-          data: result.data,
-        },
-        
-      });
+      // Fetch user profile immediately
+      try {
+        const userProfileRes = await usersApi.getThongTinTaiKhoan();
+        const userData = userProfileRes.data?.data || userProfileRes.data;
+        const fullUser = {
+          ...tokenData,
+          ...userData,
+          data: userData,
+          avtIdUser: userData?.username || user.usernameOrEmail,
+        };
+        localStorage.setItem("user", JSON.stringify(fullUser));
+        localStorage.setItem("userInfo", JSON.stringify(fullUser));
+
+        dispatch({
+          type: LOGIN_SUCCESS,
+          payload: {
+            data: fullUser,
+          },
+        });
+        dispatch({
+          type: GET_INFO_USER_SUCCESS,
+          payload: {
+            data: userProfileRes.data,
+          },
+        });
+      } catch (profileErr) {
+        dispatch({
+          type: LOGIN_SUCCESS,
+          payload: {
+            data: tokenData,
+          },
+        });
+      }
+
       Swal.fire({
         position: "center",
         icon: "success",
@@ -43,13 +65,10 @@ export const login = (user) => { // đăng nhập
         showConfirmButton: false,
         timer: 1500,
       });
-      const stateAfter = getState();      //10
-      console.log("Todos after dispatch: ", stateAfter.authReducer);      //11
-    } catch (error) {       //12
-      dispatch({        //13
+    } catch (error) {
+      dispatch({
         type: LOGIN_FAIL,
         payload: {
-          // error: error.response?.data?.data ? error.response?.data?.data : error.message,
           error: "Tài khoản hoặc mật khẩu không đúng!"
         },
       });
@@ -61,38 +80,13 @@ export const login = (user) => { // đăng nhập
         timer: 1500,
       });
     }
-
-    // dispatch({
-    //   type: LOGIN_REQUEST,
-    // });
-    // usersApi
-    //   .postDangNhap(user)
-    //   .then((result) => {
-    //     // lưu thông tin user xuống local storeage
-    //     localStorage.setItem(
-    //       "user",
-    //       JSON.stringify({ ...result.data, avtIdUser: result.data.taiKhoan })
-    //     );
-    //     dispatch({
-    //       type: LOGIN_SUCCESS,
-    //       payload: {
-    //         data: result.data,
-    //       },
-    //     });
-    //   })
-    //   .catch((error) => {
-    //     dispatch({
-    //       type: LOGIN_FAIL,
-    //       payload: {
-    //         error: error.response?.data ? error.response.data : error.message,
-    //       },
-    //     });
-    //   });
   };
 };
 
 export const logout = () => {
   return (dispatch) => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("userInfo");
     dispatch({
       type: LOGOUT,
     });

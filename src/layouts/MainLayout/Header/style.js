@@ -6,7 +6,8 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
   },
   appBar: {
-    backgroundColor: "#ffffff", boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
     transition: theme.transitions.create(['margin', 'width'], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
@@ -28,27 +29,25 @@ const useStyles = makeStyles((theme) => ({
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    color:"#034ea2", 
-    fontWeight:"800",
+    color: "#034ea2", 
+    fontWeight: "800",
     [theme.breakpoints.down(899)]: {
-      fontSize:"11px",
-      fontWeight:"600",
+      fontSize: "11px",
+      fontWeight: "600",
     },
   },
   linkTobody: {
     display: props => props.isDesktop ? "block" : "none",
     position: "absolute",
-    // top: "50%",
     left: "50%",
-transform: "translateX(-50%)",
-    // transform: "translate(-50%, -50%)",
+    transform: "translateX(-50%)",
     [theme.breakpoints.down(1040)]: {
       left: "25%",
-      fontSize:"13px",
+      fontSize: "13px",
     },
     [theme.breakpoints.down(899)]: {
       left: "25%",
-      fontSize:"12px",
+      fontSize: "12px",
     },
     [theme.breakpoints.down(773)]: {
       left: "25%",
@@ -85,10 +84,10 @@ transform: "translateX(-50%)",
       backgroundColor: "transparent",
       "& .MuiTypography-root": {
         color: "#e87722",
-    },
+      },
       "& .MuiListItemIcon-root": {
         color: "#e87722",
-    }
+      }
     },
     "& .MuiTypography-root": {
       transition: "all .2s",
@@ -118,10 +117,77 @@ transform: "translateX(-50%)",
   icon: {
     minWidth: 41,
     color: "#e87722",
-    },
+  },
   avatar: {
-    width: theme.spacing(4),
-    height: theme.spacing(4),
+    width: 36,
+    height: 36,
+    borderRadius: 4,
+    border: "none",
+    objectFit: "cover",
+  },
+  userDropdownWrapper: {
+    position: "relative",
+    display: "inline-block",
+    padding: "6px 0",
+    "&:hover $dropdownMenu": {
+      display: "block",
+    },
+    "&:hover $caretIcon": {
+      transform: "rotate(180deg)",
+    },
+  },
+  userTriggerBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "4px 8px",
+    backgroundColor: "transparent",
+    cursor: "pointer",
+    borderRadius: "4px",
+    transition: "background-color 0.2s ease",
+    "&:hover": {
+      backgroundColor: "rgba(0, 0, 0, 0.04)",
+    },
+  },
+  userFullName: {
+    fontSize: "15px",
+    fontWeight: 600,
+    color: "#333",
+    maxWidth: "160px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  caretIcon: {
+    fontSize: "18px",
+    color: "#666",
+    transition: "transform 0.2s ease",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: "100%",
+    right: 0,
+    minWidth: "150px",
+    backgroundColor: "#ffffff",
+    borderRadius: "4px",
+    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.12)",
+    border: "none",
+    padding: "4px 0",
+    zIndex: 1300,
+    display: "none",
+  },
+  dropdownItem: {
+    display: "block",
+    padding: "10px 16px",
+    fontSize: "14px",
+    fontWeight: 500,
+    color: "#333",
+    cursor: "pointer",
+    transition: "background 0.15s ease",
+    "&:hover": {
+      backgroundColor: "#f5f5f5",
+      color: "#000",
+    },
   },
   listItem: {
     "&:hover > a": {
@@ -136,7 +202,7 @@ transform: "translateX(-50%)",
   },
   menuIcon: {
     display: props => (props.isDesktop || props.openDrawer) ? "none" : "block",
-    color:'#034ea2',
+    color: '#034ea2',
   },
   drawer: {
     width: drawerWidth,
@@ -154,11 +220,13 @@ transform: "translateX(-50%)",
   },
   itemMenu: {
     display: "block",
-    padding: 10,
-    fontWeight: 300,
+    padding: "10px 16px",
+    fontWeight: 500,
     width: "100%",
     cursor: "pointer",
     fontSize: 14,
+    color: "#333",
+    transition: "all 0.2s ease",
     "&:hover": {
       color: "#fff",
       backgroundColor: "#e87722",
@@ -166,9 +234,8 @@ transform: "translateX(-50%)",
   },
   username: {
     "& > span": {
-      fontWeight: 500
+      fontWeight: 600
     }
   }
-
 }))
 export default useStyles

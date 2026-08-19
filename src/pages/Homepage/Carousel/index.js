@@ -27,7 +27,7 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import ChooseByBranch from "./ChooseByBranch";
 import ChooseByDate from "./ChooseByDate";
-import ChatBox from "./ChatBox";
+
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -140,7 +140,7 @@ export default function Carousel() {
           );
         })}
       </Slider>
-      <div style={{ position: "fixed", right: "20px", bottom: "20px", zIndex: "1000" }}><ChatBox /></div>
+      
       <Box
         sx={{
           // bgcolor: "background.paper",

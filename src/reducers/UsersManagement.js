@@ -1,4 +1,4 @@
-import {
+﻿import {
   GET_USER_LIST_REQUEST, GET_USER_LIST_SUCCESS, GET_USER_LIST_FAIL,
   DELETE_USER_REQUEST, DELETE_USER_SUCCESS, DELETE_USER_FAIL, RESET_USER_LIST,
   UPDATE_USER_REQUEST, UPDATE_USER_SUCCESS, UPDATE_USER_FAIL,
@@ -6,6 +6,7 @@ import {
   SET_IS_EXIST_USER_MODIFIED,
   GET_INFO_USER_REQUEST, GET_INFO_USER_SUCCESS, GET_INFO_USER_FAIL, GET_INFO_REVIEWER_REQUEST, GET_INFO_REVIEWER_SUCCESS, GET_INFO_REVIEWER_FAIL,
 } from './constants/UsersManagement';
+import { LOGOUT } from './constants/Auth';
 const initialState = {
   usersList: null,
   loadingUsersList: false,
@@ -68,6 +69,9 @@ const usersManagementReducer = (state = initialState, action) => {
       return {
         ...state, loadingDelete: false, errorDelete: action.payload.error, successDelete: "",
       }
+    }
+    case LOGOUT: {
+      return { ...state, successInfoUser: null, errorInfoUser: null };
     }
     case RESET_USER_LIST: {
       return {

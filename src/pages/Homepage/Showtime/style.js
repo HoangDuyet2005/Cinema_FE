@@ -1,71 +1,22 @@
 ﻿import { makeStyles } from "@material-ui/core"
 
-
 const useStyles = makeStyles(theme => ({
-  appBar: {
-    backgroundColor: 'transparent',
-    color: 'black',
-    boxShadow: 'none',
-    justifyContent: 'center',
-    alignItem: 'center',
-    marginBottom: 30,
-  },
-  tabBar: {
-    alignItem: 'center',
-    height: 50,
-    margin: '0 auto',
-    textTransform: "none",
-    display: "block",
-  },
-  flexContainer: {
-    display: 'block'
-  },
-  indicator: {
-    backgroundColor: "transparent",
-    transition: 'none',
-  },
-  tabButton: {
-    opacity: 1,
-    lineHeight: "24px",
-    height: "24px",
-    boxShadow: 'none',
-    justifyContent: 'center',
-    alignItem: 'center',
-    transition: "all 0.2s",
-    fontWeight: 500,
-    textTransform: "none",
-    fontFamily: '"Arial", "Helvetica", "sans-serif"',
-
-    '& > span': {
-      transition: "all 0.2s",
-      '&:hover': {
-        fontSize: "20px",
-      },
-    }
-  },
-  tabDangChieu: {
-    color: props => props.notDelay ? "#e87722" : "#fff",
-    backgroundColor: props => props.notDelay ? "#fff" : "#e87722",
-    fontSize: props => props.notDelay ? "14px" : "20px",
-  },
-  tabSapChieu: {
-    color: props => props.notDelay ? "#fff" : "#e87722",
-    backgroundColor: props => props.notDelay ? "#e87722" : "#fff",
-    fontSize: props => props.notDelay ? "20px" : "14px",
+  rootShowtime: {
+    padding: "30px 0 10px 0",
+    width: "100%",
   },
 
   Arrow: {
     position: "absolute",
     top: "48%",
     transform: "translateY(-50%)",
-
     zIndex: 2,
     width: "50px",
     height: "100px",
     color: "#d8d8d8 !important",
     cursor: "pointer",
     transition: "all .2s",
-    '&:hover': { color: '#e87722 !important' },
+    "&:hover": { color: "#e87722 !important" },
   },
 
   listMovie: {

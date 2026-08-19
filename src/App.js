@@ -1,5 +1,5 @@
-import { Suspense, lazy } from "react";
-
+﻿import { Suspense, lazy, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 
@@ -8,8 +8,9 @@ import TriggerLoadingLazy from "./components/TriggerLoadingLazy";
 import Loading from "./components/Loading";
 import { theme } from "./constants/config";
 import PaymentUser from "./pages/PaymentUser";
-// import CategoryManagement from "./pages/CategoryManagement";
-// import { getAllByAltText } from "@testing-library/react";
+import usersApi from "./api/usersApi";
+import { LOGIN_SUCCESS, LOGOUT } from "./reducers/constants/Auth";
+import { GET_INFO_USER_SUCCESS } from "./reducers/constants/UsersManagement";
 
 // layout
 const MainLayout = lazy(() => import("./layouts/MainLayout"));
@@ -55,12 +56,59 @@ const Register = lazy(() => import("./pages/Register"));
 const DetailNews = lazy(() => import("./pages/DetailNews"));
 const NewsDetail = lazy(() => import("./pages/NewsDetail"));
 const DetailReview = lazy(() => import("./pages/DetailReview"));
-// const DetailEvent = lazy(() => import("./pages/DetailEvent"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+function AuthInitializer() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const localUser = JSON.parse(userStr);
+        if (localUser?.accessToken) {
+          usersApi
+            .getThongTinTaiKhoan()
+            .then((res) => {
+              const userData = res.data?.data || res.data;
+              const fullUser = {
+                ...localUser,
+                ...userData,
+                data: userData,
+                avtIdUser: userData?.username,
+              };
+              localStorage.setItem("user", JSON.stringify(fullUser));
+              localStorage.setItem("userInfo", JSON.stringify(fullUser));
+              dispatch({
+                type: LOGIN_SUCCESS,
+                payload: { data: fullUser },
+              });
+              dispatch({
+                type: GET_INFO_USER_SUCCESS,
+                payload: { data: res.data },
+              });
+            })
+            .catch((err) => {
+              console.log("Auth restore error:", err);
+              if (err.response?.status === 401) {
+                localStorage.removeItem("user");
+                localStorage.removeItem("userInfo");
+                dispatch({ type: LOGOUT });
+              }
+            });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [dispatch]);
+
+  return null;
+}
 
 function App() {
   return (
     <BrowserRouter>
+      <AuthInitializer />
       <MuiThemeProvider theme={theme}>
         <Loading />
         {/* Modal */}
@@ -193,7 +241,7 @@ function App() {
                 <StaffRoute
                   exact
                   path="/staff/reviews"
-                  component={ReviewsManagement}//viet
+                  component={ReviewsManagement}
                 />
                 <StaffRoute
                   exact
@@ -226,12 +274,8 @@ function App() {
                 component={BookTicketsByStaff}
                />
               </StaffLayout>
-
-
             </Route>
 
-
-          {/* Author */}
             <Route exact path={["/dangnhap", "/dangky"]}>
               <AuthLayout>
                 <Route exact path="/dangnhap" component={Login} />

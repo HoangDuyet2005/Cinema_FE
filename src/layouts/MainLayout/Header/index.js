@@ -16,72 +16,76 @@ import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { useSelector, useDispatch } from 'react-redux';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { useHistory, useLocation } from "react-router-dom";
 import Avatar from '@material-ui/core/Avatar';
-import { scroller } from 'react-scroll'
+import { scroller } from 'react-scroll';
 
 import { LOGOUT } from '../../../reducers/constants/Auth';
-import useStyles from './style'
+import useStyles from './style';
 import { FAKE_AVATAR } from '../../../constants/config';
 import { LOADING_BACKTO_HOME } from '../../../reducers/constants/Lazy';
 import { getMovieList } from '../../../reducers/actions/Movie';
 import { getTheaters } from '../../../reducers/actions/Theater';
-import Logo from "./../../../assets/LeafSVG";
-// import Search from '../Search/Search';
-import { getInfoUser } from '../../../reducers/actions/UsersManagement';
-
 import Swal from "sweetalert2";
-import SearchBar from '../SearchBar';
-
-
-
 
 const headMenu = [
-    { nameLink: 'Tất cả Phim', id: "lichchieu" }, 
-    { nameLink: 'Đặt vé', id: "schedule" }, 
-    // { nameLink: 'Branch Theaters', id: "cumrap" }, 
-    { nameLink: 'Bài viết và Sự kiện', id: "tintuc" }, 
-
-    // { nameLink: 'Đăng ký Content Creator', id: "ungdung" }
-  ]
+  { nameLink: 'Tất cả Phim', id: "lichchieu" }, 
+  { nameLink: 'Đặt vé', id: "schedule" }, 
+  { nameLink: 'Bài viết và Sự kiện', id: "tintuc" }, 
+];
 
 export default function Header() {
   const { currentUser } = useSelector((state) => state.authReducer);
-  // console.log("header: ",currentUser);
-  const { successInfoUser, loadingInfoUser } = useSelector(
+  const { successInfoUser } = useSelector(
     (state) => state.usersManagementReducer
   );
-  // const { successInfoUser } = useSelector((state) => state.usersManagementReducer);
-  // console.log("header: ", successInfoUser);
   const { isLoadingBackToHome } = useSelector((state) => state.lazyReducer);
   const dispatch = useDispatch();
   let location = useLocation();
   const history = useHistory();
-  const theme = useTheme()
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [openDrawer, setOpenDrawer] = useState(false);
   const classes = useStyles({ isDesktop, openDrawer });
 
-  // nếu đang mở drawer mà chuyển sang màn hình lớn thì phải tự đóng lại
+  const currentAvatar =
+    currentUser?.data?.image ||
+    currentUser?.image ||
+    successInfoUser?.data?.image ||
+    successInfoUser?.image ||
+    FAKE_AVATAR;
+
+  const currentFullName =
+    currentUser?.data?.name ||
+    currentUser?.name ||
+    successInfoUser?.data?.name ||
+    successInfoUser?.name ||
+    currentUser?.data?.username ||
+    currentUser?.username ||
+    successInfoUser?.data?.username ||
+    successInfoUser?.username ||
+    "Khách hàng";
+
   useEffect(() => {
     if (isDesktop) {
       if (openDrawer) {
-        setOpenDrawer(false)
+        setOpenDrawer(false);
       }
     }
-  }, [isDesktop])
+  }, [isDesktop, openDrawer]);
 
-  useEffect(() => { // clicklink > push to home > scrollTo after loading
+  useEffect(() => {
     if (!isLoadingBackToHome) {
       setTimeout(() => {
         scroller.scrollTo(location.state, {
           duration: 800,
           smooth: 'easeInOutQuart',
-            offset: -100
-        })
+          offset: -100
+        });
       }, 200);
     }
-  }, [isLoadingBackToHome])
+  }, [isLoadingBackToHome, location.state]);
 
   const handleLogout = () => {
     const swalWithBootstrapButtons = Swal.mixin({
@@ -90,7 +94,7 @@ export default function Header() {
         cancelButton: 'btn btn-danger'
       },
       buttonsStyling: false
-    })
+    });
     
     swalWithBootstrapButtons.fire({
       title: 'Đăng xuất!',
@@ -102,95 +106,82 @@ export default function Header() {
       reverseButtons: true
     }).then((result) => {
       if (result.isConfirmed) {
-        setOpenDrawer(false)
-        dispatch({ type: LOGOUT })
+        setOpenDrawer(false);
+        dispatch({ type: LOGOUT });
+        history.push('/');
         swalWithBootstrapButtons.fire(
           'Đã đăng xuất!',
-          'DONE.',
+          'Hẹn gặp lại bạn.',
           'success'
-        )
-      } else if (
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        swalWithBootstrapButtons.fire(
-          'Đã dừng',
-          'Không đăng xuất!',
-          'error'
-        )
+        );
       }
-    })
-  }
+    });
+  };
+
   const handleLogin = () => {
-    history.push("/dangnhap", location.pathname) // truyền kèm location.pathname để đăng nhập xong quay lại
-  }
+    history.push("/dangnhap", location.pathname);
+  };
+
   const handleRegister = () => {
-    history.push("/dangky", location.pathname)
-  }
+    history.push("/dangky", location.pathname);
+  };
+
   const handleClickLogo = () => {
     if (location.pathname === "/") {
-      dispatch(getMovieList())
-      dispatch(getTheaters())
-      return
+      dispatch(getMovieList());
+      dispatch(getTheaters());
+      return;
     }
-    dispatch({ type: LOADING_BACKTO_HOME })
+    dispatch({ type: LOADING_BACKTO_HOME });
     setTimeout(() => {
-      history.push("/", "")
+      history.push("/", "");
     }, 50);
-  }
+  };
+
   const handleClickLink = (id) => {
-    if(id === "schedule")
-    {
-      history.push("/schedule")
+    if (id === "schedule") {
+      history.push("/schedule");
+    } else {
+      setOpenDrawer(false);
+      if (location.pathname === "/") {
+        scroller.scrollTo(id, {
+          duration: 1200,
+          smooth: 'easeInOutQuart',
+          offset: -100
+        });
+      } else {
+        dispatch({ type: LOADING_BACKTO_HOME });
+        setTimeout(() => {
+          history.push("/", id);
+        }, 50);
+      }
     }
-    else {
-        setOpenDrawer(false)
-        if (location.pathname === "/") {
-          scroller.scrollTo(id, {
-            duration: 1200,
-            smooth: 'easeInOutQuart',
-            offset: -100
-          })
-        } else {
-          dispatch({ type: LOADING_BACKTO_HOME })
-          setTimeout(() => {
-            history.push("/", id)
-          }, 50);
-        }
-    }
-  }
-  // const handleClickLink2 = () => {
-  //   history.push("/schedule")
-  // }
+  };
 
   const handleUser = () => {
-    history.push("/taikhoan")
+    history.push("/taikhoan");
     setOpenDrawer(false);
-  }
+  };
 
   const handleDrawerOpen = () => {
     setOpenDrawer(true);
   };
+
   const handleDrawerClose = () => {
     setOpenDrawer(false);
   };
 
-
   return (
-
     <div className={classes.root}>
-
       {/* START HEADER */}
-      <AppBar position="fixed" classes={{ root: clsx(classes.appBar, { [classes.appBarShift]: openDrawer, }), }} color='default' >
-
+      <AppBar position="fixed" classes={{ root: clsx(classes.appBar, { [classes.appBarShift]: openDrawer }) }} color='default'>
         <Toolbar className={classes.spaceBetween}>
-
           {/* logo */}
           <div className={classes.logo} onClick={handleClickLogo}>
-            <img src="/img/world-cinema-logo.png" alt="logo" style={{maxHeight: 95, objectFit: "contain"}}/>
+            <img src="/img/world-cinema-logo.png" alt="logo" style={{ maxHeight: 95, objectFit: "contain" }} />
           </div>
-          {/* Tìm kiếm */}
-          {/* <Search /> */}
-          {/* Tìm kiếm */}
+
+          {/* Links navigation */}
           <div className={classes.linkTobody}>
             <Grid
               container
@@ -198,33 +189,46 @@ export default function Header() {
               justify="space-between"
               alignItems="center"
             >
-              {/* <span className={classes.link} onClick={() => handleClickLink2()}>Đặt vé</span> */}
               {headMenu.map((link) => (
                 <span key={link.id} className={classes.link} onClick={() => handleClickLink(link.id)}>{link.nameLink}</span>
               ))}
-
-              {/* <SearchBar/> */}
-
             </Grid>
           </div>
-          {/* <div>
-            <Search />
-          </div> */}
+
           {/* user account */}
           <div className={classes.user}>
-            {currentUser ?
-              <List disablePadding className={classes.auth}>
-                <ListItem button classes={{ root: clsx(classes.itemAuth, classes.divide) }} onClick={handleUser}>
-                  <ListItemIcon classes={{ root: classes.icon }}>
-                    <Avatar alt="avatar" className={classes.avatar} src={currentUser?.data?.image ? currentUser?.data?.image : successInfoUser?.data?.image? successInfoUser?.data?.image: FAKE_AVATAR} />
-                  </ListItemIcon>
-                  <ListItemText primary={currentUser?.data?.username} />
-                </ListItem>
-                <ListItem button classes={{ root: classes.itemAuth }} onClick={handleLogout}>
-                  <ListItemText primary="Đăng xuất" />
-                </ListItem>
-              </List>
-              :
+            {currentUser ? (
+              <div className={classes.userDropdownWrapper}>
+                <div className={classes.userTriggerBtn} onClick={handleUser}>
+                  <Avatar
+                    alt="avatar"
+                    variant="square"
+                    className={classes.avatar}
+                    src={currentAvatar}
+                  />
+                  <span className={classes.userFullName} title={currentFullName}>
+                    {currentFullName}
+                  </span>
+                  <ExpandMoreIcon className={classes.caretIcon} />
+                </div>
+
+                {/* Dropdown Menu on Hover */}
+                <div className={classes.dropdownMenu}>
+                  <div
+                    className={classes.dropdownItem}
+                    onClick={handleUser}
+                  >
+                    Tài khoản
+                  </div>
+                  <div
+                    className={classes.dropdownItem}
+                    onClick={handleLogout}
+                  >
+                    Đăng xuất
+                  </div>
+                </div>
+              </div>
+            ) : (
               <List disablePadding className={classes.auth}>
                 <ListItem button classes={{ root: clsx(classes.itemAuth, classes.divide) }} onClick={handleLogin}>
                   <ListItemIcon classes={{ root: classes.icon }}>
@@ -236,7 +240,7 @@ export default function Header() {
                   <ListItemText primary="Đăng ký" />
                 </ListItem>
               </List>
-            }
+            )}
           </div>
 
           {/* menuIcon  */}
@@ -250,11 +254,10 @@ export default function Header() {
               <MenuIcon />
             </IconButton>
           </div>
-
         </Toolbar>
       </AppBar>
 
-      {/* content open menu*/}
+      {/* content open menu mobile*/}
       <Drawer
         className={classes.drawer}
         anchor="right"
@@ -266,40 +269,44 @@ export default function Header() {
         transitionDuration={300}
       >
         <div className={classes.drawerHeader}>
-          {currentUser ?
+          {currentUser ? (
             <ListItem button classes={{ root: clsx(classes.itemAuth, classes.divide, classes.hover) }} onClick={handleUser}>
               <ListItemIcon classes={{ root: classes.icon }}>
-                <Avatar alt="avatar" className={classes.avatar} src={currentUser?.data?.image ? currentUser?.data?.image : successInfoUser?.data?.image? successInfoUser?.data?.image: FAKE_AVATAR} />
+                <Avatar alt="avatar" variant="square" className={classes.avatar} src={currentAvatar} />
               </ListItemIcon>
-              <ListItemText className={classes.username} primary={currentUser?.data?.username} />
+              <ListItemText className={classes.username} primary={currentFullName} />
             </ListItem>
-            :
+          ) : (
             <ListItem button classes={{ root: classes.listItem }} onClick={handleLogin}>
               <ListItemIcon classes={{ root: classes.icon }}>
                 <AccountCircleIcon fontSize="large" />
               </ListItemIcon>
               <span className={classes.link} style={{ fontWeight: 500 }}>Đăng nhập</span>
             </ListItem>
-          }
+          )}
           <IconButton classes={{ root: classes.listItem }} onClick={handleDrawerClose}>
             <ChevronRightIcon />
           </IconButton>
         </div>
         <List>
           {headMenu.map((link) => (
-            <span key={link.id} className={classes.itemMenu} onClick={() => handleClickLink(link.id)} >{link.nameLink}</span>
+            <span key={link.id} className={classes.itemMenu} onClick={() => handleClickLink(link.id)}>{link.nameLink}</span>
           ))}
 
-          {currentUser ?
-            <span className={classes.itemMenu} onClick={handleLogout}>Đăng xuất</span>
-            :
+          {currentUser ? (
+            <>
+              <span className={classes.itemMenu} onClick={handleUser}>
+                Tài khoản
+              </span>
+              <span className={classes.itemMenu} onClick={handleLogout}>
+                Đăng xuất
+              </span>
+            </>
+          ) : (
             <span className={classes.itemMenu} onClick={handleRegister}>Đăng ký</span>
-          }
+          )}
         </List>
       </Drawer>
     </div>
   );
 }
-
-
-
