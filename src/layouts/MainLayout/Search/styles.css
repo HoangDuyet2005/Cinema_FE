@@ -1,0 +1,45 @@
+
+.search-container {
+    max-width: 280px;
+    position:fixed;
+    display: inline-block;
+    flex-direction: column;
+    left:55%;
+    text-align: center;
+    justify-items: center;
+  }
+  
+  .dropdown {
+    background-color: rgb(1, 1, 1);
+    display: flex;
+    position:absolute;
+    flex-direction: column;
+    color:rgb(255, 255, 255);
+    font-size:8;
+    padding-left:1rem;
+    width: 600px;
+  }
+  
+  .dropdown:empty {
+    border: none;
+  }
+  
+  .dropdown-row {
+    cursor: pointer;
+    text-align: start;
+    margin: 10px 0;
+    border-bottom: 1px solid white;
+  }
+  
+  input {
+    max-width: 500px;
+    padding: 5px;
+    border-radius: 5px;
+    border:none;
+    margin-right: 5px;
+  }
+  
+  .search-inner {
+    display: flex;
+    padding: 4px;
+  }

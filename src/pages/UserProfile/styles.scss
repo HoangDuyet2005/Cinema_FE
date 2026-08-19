@@ -1,0 +1,47 @@
+.article-container {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  .article-item {
+    width: 300px;
+    height: 200px;
+    display: flex;
+    position: relative;
+    z-index: 2;
+    justify-content: flex-start;
+    cursor: pointer;
+    align-items: flex-end;
+    .article-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      z-index: -1;
+    }
+    .article-title {
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      background-color: rgb(128, 128, 128, 0.5);
+      padding: 10px;
+      & > * {
+        color: white !important;
+        &:hover {
+          color: yellow !important;
+        }
+      }
+    }
+    .article-icon {
+      position: absolute;
+      right: 0px;
+      top: 0px;
+      z-index: -1;
+    }
+  }
+}

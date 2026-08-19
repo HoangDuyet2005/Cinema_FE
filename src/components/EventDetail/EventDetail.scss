@@ -1,0 +1,191 @@
+@import "../connect";
+.news__container {
+  margin-top: spacing(7);
+  .news__content {
+    .news__left {
+      .news__form {
+        box-shadow: 0 10px 40px 0 rgba(16, 36, 94, 0.2);
+        transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+        background-color: rgb(45, 45, 45);
+        border-bottom: 1px solid $color-blue;
+        padding: spacing(1) spacing(1);
+        margin: spacing(2) spacing(0);
+        border-radius: 5px;
+        .news__form--title {
+          color: $color-gray-5;
+        }
+        .below__title {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: spacing(2);
+          .title--info {
+            .info--author {
+              color: $color-gray-6;
+              text-transform: uppercase;
+              @include Text($fs-1, $fw-bold);
+              .info--days {
+                margin-left: spacing(3);
+                color: $color-gray-4;
+              }
+            }
+          }
+          .title--social {
+            display: flex;
+            justify-content: space-between;
+            .social--item {
+              color: $color-blue;
+              cursor: pointer;
+            }
+          }
+        }
+        .news__form--description {
+          color: $color-gray-3;
+          letter-spacing: 1px;
+          margin-bottom: spacing(2);
+        }
+        .news__form--img {
+          margin-bottom: spacing(2);
+          img {
+            width: 100%;
+          }
+        }
+        .news__form--source {
+          color: #fff;
+          @include Text($fs-2, $fw-bold);
+        }
+        .news__form--footer {
+          border-top: 1px solid $color-gray-4;
+          padding: spacing(2) spacing(0);
+          .news__form--button {
+            .button--content {
+              .button--item {
+                border: 1px solid #fff;
+                color: #fff;
+                text-transform: uppercase;
+                font-weight: bold;
+                background: none;
+                width: 100%;
+                padding: spacing(1) 0;
+                border-radius: 2px;
+                outline: none;
+                transition: 0.2s linear;
+                @include responsive_mobile {
+                  @include Text($fs-1, $fw-bold);
+                }
+                @include responsive_mobile--tiny {
+                  @include Text($fs-1 - 2, $fw-bold);
+                }
+                &.fb {
+                  background-color: #4267b2;
+                  border: 1px solid #29487d;
+                  &:hover {
+                    opacity: 0.7;
+                  }
+                }
+                &.tw {
+                  background-color: $color-blue;
+                  border: 1px solid $color-blue;
+                  &:hover {
+                    opacity: 0.7;
+                  }
+                }
+                &.email {
+                  background-color: $color-gray-3;
+                  border: 1px solid $color-gray-3;
+                  color: $color-black-0;
+                  &:hover {
+                    opacity: 0.7;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    .news__right {
+      .news__title {
+        color: $color-blue;
+        position: relative;
+        font-style: italic;
+        text-transform: uppercase;
+        font-weight: bold;
+        opacity: 0.9;
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: -5px;
+          left: 5px;
+          width: 100px;
+          height: 4px;
+          background-color: $color-blue;
+        }
+      }
+      .news__items {
+        box-shadow: 0 10px 40px 0 rgba(16, 36, 94, 0.2);
+        display: flex;
+        transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+        background-color: rgb(45, 45, 45);
+        border-bottom: 1px solid $color-blue;
+        flex-direction: column;
+        padding: spacing(1) spacing(1);
+        margin: spacing(2) spacing(0);
+        border-radius: 5px;
+        &:hover img {
+          opacity: 0.7;
+        }
+        &:hover .items__text .items__text-title .items__text-link {
+          color: $color-blue;
+          text-decoration: underline;
+        }
+        .items__img {
+          img {
+            width: 100%;
+            height: 180px;
+            @include responsive_mobile {
+              width: 100%;
+              height: 300px;
+            }
+            @include responsive_tablet {
+              width: 100%;
+              height: 300px;
+            }
+            @include responsive_laptop--mini {
+              width: 100%;
+              height: 100px;
+            }
+          }
+        }
+        .items__text {
+          padding: spacing(1) spacing(0);
+          .items__text-title {
+            .items__text-link {
+              color: $color-gray-3;
+              transition: linear 0.2s;
+            }
+          }
+        }
+      }
+    }
+  }
+  .readMore {
+    display: flex;
+    justify-content: center;
+    padding: spacing(3) 0;
+    margin-bottom: spacing(2);
+    .btn__readmore {
+      border: 1px solid $color-gray-2;
+      color: $color-gray-3;
+      padding: spacing(0.5) spacing(2);
+      background: none;
+      box-shadow: none;
+      transition: 0.2s ease-in-out;
+      border-radius: 3px;
+      &:hover {
+        border: 1px solid $color-blue;
+        background-color: $color-blue;
+        color: $color-white-0;
+      }
+    }
+  }
+}

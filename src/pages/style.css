@@ -1,0 +1,204 @@
+﻿/* add css module styles here (optional) */
+.section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+.section .inputBox {
+    width: 100%;
+}
+.section .inputActions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    margin-left: 15px;
+}
+.section .inputActions .postBtn {
+    color: white;
+    text-align: center;
+    background-size: 200% auto;
+    border-radius: 5px;
+    transition: 0.5s;
+    padding: 8px 16px;
+    background-color: #84dcff;
+    border: none;
+    margin-right: 10px;
+    font-weight: bolder;
+    font-size: 16px;
+}
+.section .inputActions .postBtn:hover {
+    background-position: right center;
+    cursor: pointer;
+}
+.section .inputActions .postBtn:focus {
+    outline: 0;
+}
+.section .inputActions .cancelBtn {
+    color: #8b8b8b;
+    text-align: center;
+    background-size: 200% auto;
+    border-radius: 5px;
+    transition: 0.5s;
+    padding: 8px 10px;
+    border: 2px solid #8b8b8b;
+    font-weight: bolder;
+    font-size: 16px;
+}
+.section .inputActions .cancelBtn:hover {
+    background-position: right center;
+    cursor: pointer;
+}
+.section .inputActions .cancelBtn:focus {
+    outline: 0;
+}
+.form {
+    display: flex;
+    background-color: #f3f3f3;
+    padding: 8px;
+    padding-bottom: 15px;
+    border-radius: 8px;
+}
+.form .userImg {
+    display: flex;
+    width: 10%;
+    justify-content: center;
+    align-items: center;
+}
+.form .postComment {
+    width: 80%;
+    border: none;
+    border-bottom: 1px solid #181818;
+    text-decoration: none;
+    background-color: transparent;
+    margin-left: 4px;
+}
+.form .postComment:focus {
+    outline: none;
+    border-bottom: 2px solid #0e0e0e;
+}
+.form .postComment::placeholder {
+    margin-top: -2px;
+}
+.displayComments {
+    /* margin-top: 18px;
+    margin-left: 38px; */
+    margin-top: 20px;
+    background-color: #f3f3f3;
+    padding: 5px;
+}
+.displayComments .halfDiv {
+    display: flex;
+    justify-content: space-between;
+}
+.displayComments .halfDiv .userInfo {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+}
+.displayComments .halfDiv .userInfo .commentsTwo {
+    display: flex;
+    margin-top: 8px;
+}
+.displayComments .halfDiv .userInfo .commentsTwo .fullName {
+    display: flex;
+    margin-left: 10px;
+}
+.displayComments .halfDiv .userInfo .commentsTwo .replyBtn {
+    background-color: transparent;
+    border: none;
+    color: gray;
+    outline: none;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0px 5px !important;
+    width: 70px;
+    padding: 5px;
+    border-radius: 4px;
+}
+.displayComments .halfDiv .userInfo .commentsTwo .replyBtn:hover {
+    outline: none;
+    background-color: rgba(160, 160, 160, 0.315);
+}
+.displayComments .halfDiv .userInfo .commentsTwo .replyBtn:focus {
+    outline: 0;
+}
+.displayComments .halfDiv .userActions {
+    margin-top: 20px;
+}
+.displayComments .halfDiv .userActions .actionsBtn {
+    background-color: black;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    color:white;
+}
+.displayComments .halfDiv .userActions .actionsBtn:hover {
+    outline: none;
+    background-color: #dbdbdb 5d;
+}
+.displayComments .halfDiv .userActions .actionsBtn:focus {
+    outline: 0;
+}
+.displayComments .replySection {
+    margin-left: 35px;
+    border-left: 2px solid #c7c7c7;
+    margin-top: 6px;
+}
+.actionDiv {
+    width: 0px !important;
+}
+.actionDiv .editBtn {
+    background-color: transparent;
+    outline: none;
+    border: none;
+    cursor: pointer;
+}
+.actionDiv .deleteBtn {
+    background-color: transparent;
+    outline: none;
+    border: none;
+    cursor: pointer;
+}
+.signBox {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: transparent;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+}
+.signBox .signLine {
+    margin-top: 5px;
+    font-weight: 500;
+    color: #9c9c9c;
+    font-size: 17px;
+}
+.signBox .loginBtn {
+    border: 2px solid #00c3ff;
+    border-radius: 8px;
+    background-color: transparent;
+    padding: 5px 10px;
+    color: #00c3ff;
+    font-weight: bolder;
+    margin-right: 10px;
+    font-size: 16px;
+}
+.signBox .loginBtn:active {
+    outline: none;
+    border: none;
+}
+.signBox .signBtn {
+    border: 2px solid #00c3ff;
+    border-radius: 8px;
+    background-color: #00c3ff;
+    padding: 5px 10px;
+    color: #fff;
+    font-weight: bolder;
+    font-size: 16px;
+}
+.signBox .signBtn:active {
+    outline: none;
+    border: none;
+}
