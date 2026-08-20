@@ -279,22 +279,27 @@ export default function ChooseByBranch() {
     theatersApi.getThongTinLichChieuPhim(data.lichChieuPhimData[indexSelect].movie.id, idRap)
     .then((response) => {
       console.log("all lịch chiếu: ",response?.data?.data?.content);
-      data.lichChieuPhimData = response?.data?.data?.content
-      const ngayChieuRender = data.lichChieuPhimData.map((item) => {
-        // if(new Date(item.startDate).getTime() >= new Date().getTime())
-        return item.startDate.slice(0, 10); // tạo mảng mới với item là "2020-12-17" cắt ra từ 2020-12-17T10:10:00
-      });
-      const ngayChieuRenderRemoveDuplicates = [...new Set(ngayChieuRender)]; // xóa đi phần tử trùng lặp để hiển thị
+      const lichChieuList = response?.data?.data?.content || [];
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
 
-      const filteredArray = ngayChieuRenderRemoveDuplicates.filter((element) => {
-        return element !== undefined;
-      });
+        const ngayChieuRender = lichChieuList
+          .filter((item) => {
+            const sDate = item.startDate ? item.startDate.slice(0, 10) : '';
+            if (sDate < todayStr) return false;
+            if (sDate === todayStr && item.startTime && item.startTime < currentTimeStr) return false;
+            return true;
+          })
+          .map((item) => item.startDate.slice(0, 10));
 
-      setData((data) => ({
-        ...data,
-        ngayChieuRender: filteredArray,
-        lichChieuPhimData: data.lichChieuPhimData ? data.lichChieuPhimData : [],
-      }));
+        const ngayChieuRenderRemoveDuplicates = [...new Set(ngayChieuRender)].sort();
+
+        setData((data) => ({
+          ...data,
+          ngayChieuRender: ngayChieuRenderRemoveDuplicates,
+          lichChieuPhimData: lichChieuList,
+        }));
     })
     .catch((err) => {
       console.log(err);
@@ -354,7 +359,7 @@ export default function ChooseByBranch() {
     theatersApi.getThongTinLichCoNgay(idPhim, idRap, data.lichChieuPhimData[indexSelect].startDate)
     .then((response) => {
       console.log("all lịch chiếu: ",response.data.data.content);
-      const lichChieuPhimDataSelected = response.data.data.content
+      const lichChieuPhimDataSelected = (response.data.data.content || []).filter(item => item.startDate === e.target.value || (item.startDate && item.startDate.slice(0, 10) === e.target.value))
       const suatChieuRender = lichChieuPhimDataSelected.map((item) => {
         return item;
       });
@@ -597,7 +602,6 @@ export default function ChooseByBranch() {
                 selected: classes["menu__item--selected"],
               }}
             >
-              <div>{formatDate(ngayChieu).dayToday}</div>
               <div>{formatDate(ngayChieu).dateFull}</div>
             </MenuItem>
           ))}

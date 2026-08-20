@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react'
+﻿import React, { Fragment, useEffect, useState } from 'react'
 
 import formatDate from '../../../../../utilities/formatDate'
 import BtnGoToCheckOutPhong from '../../../../../components/BtnGoToCheckOutPhong';
@@ -7,51 +7,40 @@ import theatersApi from '../../../../../api/theatersApi';
 
 export default function LstGioChieu(props) {
   const [lstLichChieuTheoPhim, setLstLichChieuTheoPhim] = useState([]);
-  // console.log("nè",props);
   const classes = useStyles()
+
   useEffect(() =>{
-    theatersApi.getThongTinLichChieuPhimCoRap(props.idPhim,props.idRap)
-    // theatersApi.getThongTinLichChieuPhimCoRap(7,1)
+    theatersApi.getThongTinLichChieuPhimCoRap(props.idPhim, props.idRap)
     .then((res)=>{
-      // console.log(res.data.data);
       setLstLichChieuTheoPhim(res.data.data)
     })
     .catch((err)=>{
-      // console.log(err);
+      console.log(err);
     })
-  },[])
-  // console.log(lstLichChieuTheoPhim);
-  const mangChiChuaNgay = lstLichChieuTheoPhim?.content?.map(item => {  // tạo mảng mới chỉ chứa ngày
-    // if(new Date(item.startDate).getTime() >= new Date().getTime())
-    return item.startDate.slice(0, 10);// item là "2020-12-17" cắt ra từ 2020-12-17T10:10:00
-  })
-  // console.log(mangChiChuaNgay);
+  },[props.idPhim, props.idRap])
 
-  const filteredArray = mangChiChuaNgay?.filter((element) => {
-    return element !== undefined;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
+
+  const validSchedules = (lstLichChieuTheoPhim?.content || []).filter(item => {
+    const sDate = item.startDate ? item.startDate.slice(0, 10) : '';
+    if (sDate < todayStr) return false;
+    if (sDate === todayStr && item.startTime && item.startTime < currentTimeStr) return false;
+    return true;
   });
-  // console.log("filteredArray: ", filteredArray);
 
-  const MangNgayKhongTrungLap = [...new Set(filteredArray)] // xóa đi ngày trùng lặp > dùng mảng này để render số phần tử
+  const mangChiChuaNgay = validSchedules.map(item => item.startDate.slice(0, 10));
+  const MangNgayKhongTrungLap = [...new Set(mangChiChuaNgay)].sort();
 
-  // const filterByDay = (date) => { // lọc ra item từ mảng gốc
-  //   const gioChieuRenDer = lstLichChieuTheoPhim.filter(item => {
-  //     if (item.startDate.slice(0, 10) === date) {
-  //       return true
-  //     }
-  //     return false
-  //   })
-  //   return gioChieuRenDer;
-  // }
   return (
     <div className={classes.lstNgayChieu}>
-      {MangNgayKhongTrungLap.length === 0 ? <h6 style={{textAlign:"center", padding:"5px",  color:"white", backgroundColor:"black", fontWeight:"medium"}}>Không có suất chiếu hiện tại</h6> : null}
       {MangNgayKhongTrungLap.map(date => (
         <Fragment key={date}>
           <p className={classes.ngayChieu}>{formatDate(date).dateFull}</p>
           <div className={classes.groupTime}>
-            {lstLichChieuTheoPhim?.content?.map((lichChieuTheoPhim) => (
-              (lichChieuTheoPhim.startDate === date) ?
+            {validSchedules.map((lichChieuTheoPhim) => (
+              (lichChieuTheoPhim.startDate?.slice(0, 10) === date) ?
               <Fragment key={lichChieuTheoPhim?.id}>
                 <BtnGoToCheckOutPhong 
                  lichChieuTheoPhim={lichChieuTheoPhim?.startTime}
@@ -64,13 +53,11 @@ export default function LstGioChieu(props) {
                  maRap={lichChieuTheoPhim?.branch?.id}
                  phong={lichChieuTheoPhim?.room?.name}
                 />
-              </Fragment>:null
+              </Fragment> : null
             ))}
           </div>
-
         </Fragment>
-      ))
-    }
-    </div >
+      ))}
+    </div>
   )
 }

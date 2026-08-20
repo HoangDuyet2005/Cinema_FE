@@ -12,7 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { getMovieList } from "../../reducers/actions/Movie";
 import eventsApi from "../../api/eventsApi";
 import interactionApi from "../../api/interactionApi";
-import Choose from "../../pages/Homepage/Carousel/Choose";
+import QuickBooking from "./QuickBooking";
 import Swal from "sweetalert2";
 import moment from "moment";
 import "moment/locale/vi";
@@ -564,15 +564,8 @@ export default function ReviewsDetailComponent(props) {
             className="col-12 col-lg-4 review-sidebar-col"
             style={{ padding: "0 0 0 10px" }}
           >
-            {/* Widget 1: Mua Vé Nhanh (Fully Interactive Choose Component) */}
-            <div className="sidebar-quick-book-widget">
-              <div className="quick-book-header">
-                <h3>Mua Vé Nhanh</h3>
-              </div>
-              <div className="quick-book-body-wrapper">
-                <Choose />
-              </div>
-            </div>
+            {/* Widget 1: Mua Vé Nhanh */}
+            <QuickBooking />
 
             {/* Widget 2: | PHIM ĐANG CHIẾU */}
             <div className="sidebar-now-showing-widget">

@@ -13,12 +13,21 @@ export default function LichChieuDesktop({ data }) {
   const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
+
     theatersApi.getThongTinLichChieuPhim(param.maPhim, null)
       .then((response) => {
-        const allSchedules = response?.data?.data?.content || [];
+        const allSchedules = (response?.data?.data?.content || []).filter(s => {
+          const sDate = s.startDate ? s.startDate.slice(0, 10) : '';
+          if (sDate < todayStr) return false;
+          if (sDate === todayStr && s.startTime && s.startTime < currentTimeStr) return false;
+          return true;
+        });
         setSchedules(allSchedules);
         
-        const uniqueDates = [...new Set(allSchedules.map(s => s.startDate))].sort();
+        const uniqueDates = [...new Set(allSchedules.map(s => s.startDate ? s.startDate.slice(0, 10) : ''))].filter(d => d >= todayStr).sort();
         setDates(uniqueDates);
         if (uniqueDates.length > 0) {
           setSelectedDate(uniqueDates[0]);
@@ -29,7 +38,7 @@ export default function LichChieuDesktop({ data }) {
       });
   }, [param.maPhim]);
 
-  const schedulesForDate = schedules.filter(s => s.startDate === selectedDate);
+  const schedulesForDate = schedules.filter(s => (s.startDate ? s.startDate.slice(0, 10) : '') === selectedDate);
   
   // Group by branch
   const branchesMap = {};
@@ -45,7 +54,7 @@ export default function LichChieuDesktop({ data }) {
   return (
     <div className={classes.root} style={{ flexDirection: 'column', width: '100%', padding: '20px', minHeight: 'auto' }}>
       <div className={classes.listDay} style={{ borderBottom: '1px solid #ccc', marginBottom: '20px', paddingBottom: '10px', overflowX: 'auto', display: 'flex', whiteSpace: 'nowrap' }}>
-        {dates.length === 0 && <p style={{ padding: 10 }}>Không có lịch chiếu cho phim này!</p>}
+        {dates.length === 0 && <p style={{ padding: 10 }}>Không có lịch chiếu sắp tới cho phim này!</p>}
         {dates.map((day, i) => (
           <div
             className={classes.dayItem}
@@ -70,7 +79,6 @@ export default function LichChieuDesktop({ data }) {
         {branches.map(b => (
           <div key={b.branch.id} style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-              
               <div>
                 <h5 style={{ fontWeight: 'bold', margin: 0, fontSize: '16px' }}>{b.branch.name}</h5>
                 <p style={{ margin: 0, fontSize: '13px', color: '#777' }}>{b.branch.address}</p>
@@ -100,4 +108,3 @@ export default function LichChieuDesktop({ data }) {
     </div>
   );
 }
-

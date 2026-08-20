@@ -391,7 +391,7 @@ export default function ChooseByDate() {
     theatersApi.getThongTinLichCoNgay(data.lichChieuPhimData[indexSelect].movie.id, idRap, data.setNgayXem)
     .then((response) => {
       console.log("all lịch chiếu: ",response.data.data.content);
-      const lichChieuPhimDataSelected = response.data.data.content
+      const lichChieuPhimDataSelected = (response.data.data.content || []).filter(item => item.startDate === e.target.value || (item.startDate && item.startDate.slice(0, 10) === e.target.value))
       const suatChieuRender = lichChieuPhimDataSelected.map((item) => {
         return item;
       });

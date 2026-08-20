@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
@@ -320,7 +320,7 @@ export default function Choose() {
     theatersApi.getThongTinLichChieuPhim(idPhim, idRap)
     .then((response) => {
       // console.log("all lịch chiếu: ",response.data.data.content);
-      const lichChieuPhimDataSelected = response.data.data.content
+      const lichChieuPhimDataSelected = (response.data.data.content || []).filter(item => item.startDate === e.target.value || (item.startDate && item.startDate.slice(0, 10) === e.target.value))
       const suatChieuRender = lichChieuPhimDataSelected.map((item) => {
         return item;
       });
