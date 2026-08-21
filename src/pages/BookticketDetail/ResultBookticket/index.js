@@ -17,7 +17,6 @@ export default function ResultBookticket() {
     amount,
     foodAmount,
     paymentMethod,
-    email,
   } = useSelector((state) => state.bookTicketReducer);
 
   const [billDetail, setBillDetail] = useState(null);
@@ -37,9 +36,10 @@ export default function ResultBookticket() {
     }
   }, [param.maLichChieu]);
 
-  // 2. Nếu có billId từ bookingResult, tải lại chi tiết hóa đơn từ Database
+  // 2. Nếu có billId từ bookingResult hoặc URL query, tải lại chi tiết hóa đơn từ Database
   useEffect(() => {
-    const bId = bookingResult?.id || bookingResult?.billId;
+    const searchParams = new URLSearchParams(window.location.search);
+    const bId = bookingResult?.id || bookingResult?.billId || searchParams.get("billId");
     if (bId) {
       billsApi
         .getBillByID(bId)
@@ -55,19 +55,41 @@ export default function ResultBookticket() {
   const bookingCode =
     billDetail?.bookingCode ||
     bookingResult?.bookingCode ||
-    `WC2026-${String(bookingResult?.id || Math.floor(Math.random() * 900000 + 100000))}`;
+    `WC2026-${String(billDetail?.id || bookingResult?.id || Math.floor(Math.random() * 900000 + 100000))}`;
 
-  const finalAmount =
-    billDetail?.price ||
-    (amount || 0) + (foodAmount || 0);
+  // Lấy danh sách ghế thực tế
+  const displaySeats =
+    billDetail?.seats && billDetail.seats.length > 0
+      ? billDetail.seats.map((s) => s.name || s)
+      : bookingResult?.seats && bookingResult.seats.length > 0
+      ? bookingResult.seats.map((s) => s.name || s)
+      : listSeatSelected && listSeatSelected.length > 0
+      ? listSeatSelected
+      : [];
 
+  // Lấy danh sách bắp nước thực tế
   const displayFoods =
     billDetail?.foods && billDetail.foods.length > 0
       ? billDetail.foods
-      : selectedFoods || [];
+      : bookingResult?.foods && bookingResult.foods.length > 0
+      ? bookingResult.foods
+      : selectedFoods && selectedFoods.length > 0
+      ? selectedFoods
+      : [];
+
+  const finalAmount =
+    billDetail?.price != null
+      ? Number(billDetail.price)
+      : (amount || 0) + (foodAmount || 0);
+
+  const movieObj = scheduleInfo?.movie || billDetail?.schedule?.movie;
+  const branchObj = scheduleInfo?.branch || billDetail?.schedule?.branch;
+  const roomObj = scheduleInfo?.room || billDetail?.schedule?.room;
+  const startDateVal = scheduleInfo?.startDate || billDetail?.schedule?.startDate || param.ngayChieu || "2026-08-21";
+  const startTimeVal = scheduleInfo?.startTime || billDetail?.schedule?.startTime || param.gioChieu || "10:45:00";
 
   return (
-    <div style={{ backgroundColor: "#ffffff", padding: "20px 24px", minHeight: "80vh" }}>
+    <div style={{ backgroundColor: "#ffffff", padding: "20px 24px", minHeight: "80vh", borderRadius: "8px", border: "1px solid #f1f5f9" }}>
       {/* 1. BANNER THÔNG BÁO THÀNH CÔNG MÀU XANH LÁ CHUẨN */}
       <div
         style={{
@@ -157,7 +179,7 @@ export default function ResultBookticket() {
         <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
           <img
             src={
-              scheduleInfo?.movie?.smallImageURl ||
+              movieObj?.smallImageURl ||
               "https://i.pravatar.cc/150?img=11"
             }
             alt="poster"
@@ -170,25 +192,25 @@ export default function ResultBookticket() {
           />
           <div>
             <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#1e293b", margin: "0 0 6px 0" }}>
-              {scheduleInfo?.movie?.name || "Chi Tiết Phim"}
+              {movieObj?.name || "Chi Tiết Phim"}
             </h3>
             <div style={{ fontSize: "13px", color: "#475569", marginBottom: "4px" }}>
-              <b>{scheduleInfo?.branch?.name || "WORLD CINEMA"}</b> - {scheduleInfo?.room?.name || "Phòng 101"} ({scheduleInfo?.room?.format || "2D"})
+              <b>{branchObj?.name || "WORLD CINEMA"}</b> - {roomObj?.name || "Phòng 101"} ({roomObj?.format || "2D"})
             </div>
             <div style={{ fontSize: "13px", color: "#64748b" }}>
-              Suất: <b>{scheduleInfo?.startTime ? scheduleInfo.startTime.slice(0, 5) : "19:00"}</b> - {formatDate(scheduleInfo?.startDate || "2026-08-21")?.dateFull || param.ngayChieu || "21/08/2026"}
+              Suất: <b>{startTimeVal ? startTimeVal.slice(0, 5) : "10:45"}</b> - {formatDate(startDateVal)?.dateFull || startDateVal}
             </div>
           </div>
         </div>
 
         {/* Ghế đã đặt */}
-        <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "14px", marginBottom: "14px" }}>
-          <div style={{ fontSize: "13px", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
-            Ghế đã đặt:
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {listSeatSelected && listSeatSelected.length > 0 ? (
-              listSeatSelected.map((seat) => (
+        {displaySeats.length > 0 && (
+          <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "14px", marginBottom: "14px" }}>
+            <div style={{ fontSize: "13px", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
+              Ghế đã đặt:
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {displaySeats.map((seat) => (
                 <span
                   key={seat}
                   style={{
@@ -202,12 +224,10 @@ export default function ResultBookticket() {
                 >
                   Ghế {seat}
                 </span>
-              ))
-            ) : (
-              <span style={{ fontSize: "13px", color: "#64748b" }}>Đã lưu</span>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Combo bắp nước đã đặt (lưu từ bill_food) */}
         {displayFoods && displayFoods.length > 0 && (

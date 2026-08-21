@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import bookingApi from "../../../api/bookingApi";
-import Countdown from "../Countdown";
 
 export default function FoodSelection() {
   const dispatch = useDispatch();
@@ -63,40 +62,38 @@ export default function FoodSelection() {
   };
 
   return (
-    <div style={{ backgroundColor: "#ffffff", padding: "20px 24px", minHeight: "80vh" }}>
-      {/* Tiêu đề trang & Đồng hồ đếm ngược giữ ghế */}
-      <div
+    <div
+      style={{
+        backgroundColor: "#ffffff",
+        padding: "24px 28px",
+        minHeight: "85vh",
+        borderRadius: "8px",
+        border: "1px solid #f1f5f9",
+      }}
+    >
+      {/* Tiêu đề mục Chọn Combo / Sản phẩm */}
+      <h2
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid #f1f5f9",
-          paddingBottom: "16px",
-          marginBottom: "20px",
+          fontSize: "15px",
+          fontWeight: "700",
+          color: "#1e293b",
+          margin: "0 0 20px 0",
         }}
       >
-        <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#1e293b", margin: 0 }}>
-          Chọn Combo / Sản phẩm
-        </h2>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "14px", color: "#ea580c", fontWeight: "600" }}>
-            Thời gian giữ ghế:
-          </span>
-          <div style={{ color: "#ea580c", fontWeight: "800", fontSize: "16px" }}>
-            <Countdown />
-          </div>
-        </div>
-      </div>
+        Chọn Combo / Sản phẩm
+      </h2>
 
       {/* Danh sách các sản phẩm Combo / Thức ăn / Nước uống */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
         {foodList.length === 0 ? (
-          <div style={{ padding: "30px", textAlign: "center", color: "#64748b" }}>
+          <div style={{ padding: "40px", textAlign: "center", color: "#64748b", fontSize: "14px" }}>
             Đang tải danh mục bắp nước & combo...
           </div>
         ) : (
-          foodList.map((item) => {
+          foodList.map((item, index) => {
             const qty = quantities[item.id] || 0;
+            const isLast = index === foodList.length - 1;
+
             return (
               <div
                 key={item.id}
@@ -104,72 +101,108 @@ export default function FoodSelection() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "16px 20px",
-                  border: "1px solid #f1f5f9",
-                  borderRadius: "10px",
-                  backgroundColor: qty > 0 ? "#fffaf5" : "#ffffff",
-                  transition: "all 0.2s ease",
-                  boxShadow: qty > 0 ? "0 2px 10px rgba(234, 88, 12, 0.08)" : "none",
+                  padding: "16px 0",
+                  borderBottom: isLast ? "none" : "1px solid #f1f5f9",
+                  gap: "16px",
                 }}
               >
-                {/* Cột trái: Hình ảnh sản phẩm + Thông tin mô tả */}
-                <div style={{ display: "flex", alignItems: "center", gap: "20px", flex: 1 }}>
+                {/* Cột trái: Hình ảnh sản phẩm (vuông nhẹ, nền sáng) */}
+                <div
+                  style={{
+                    width: "90px",
+                    height: "90px",
+                    backgroundColor: "#f8fafc",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    overflow: "hidden",
+                  }}
+                >
                   <img
-                    src={item.imageUrl || "https://cdn.galaxycine.vn/media/2023/11/30/combo-2-big-extra_1701334812391.png"}
+                    src={
+                      item.imageUrl ||
+                      "https://cdn.galaxycine.vn/media/2023/11/30/combo-2-big-extra_1701334812391.png"
+                    }
                     alt={item.name}
                     style={{
-                      width: "85px",
-                      height: "85px",
+                      width: "100%",
+                      height: "100%",
                       objectFit: "contain",
-                      borderRadius: "8px",
-                      backgroundColor: "#f8fafc",
-                      padding: "4px",
                     }}
                   />
-                  <div style={{ maxWidth: "520px" }}>
-                    <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#1e293b", margin: "0 0 6px 0" }}>
-                      {item.name}
-                    </h4>
-                    <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 8px 0", lineHeight: "1.4" }}>
-                      {item.description}
-                    </p>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
-                      Giá: <span style={{ color: "#ea580c" }}>{item.price?.toLocaleString("vi-VN")} đ</span>
-                    </div>
+                </div>
+
+                {/* Cột giữa: Tiêu đề + Mô tả chi tiết + Đơn giá */}
+                <div style={{ flex: 1, paddingRight: "16px" }}>
+                  <h4
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "700",
+                      color: "#1e293b",
+                      margin: "0 0 4px 0",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    {item.name}
+                  </h4>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#64748b",
+                      margin: "0 0 6px 0",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    {item.description || item.name}
+                  </p>
+                  <div
+                    style={{
+                      fontSize: "12.5px",
+                      color: "#1e293b",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Giá: {item.price?.toLocaleString("vi-VN")} <u>đ</u>
                   </div>
                 </div>
 
-                {/* Cột phải: Bộ đếm số lượng [-] [ 0 ] [+] */}
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                {/* Cột phải: Bộ đếm số lượng tinh gọn [ -  0  + ] */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    flexShrink: 0,
+                  }}
+                >
                   <button
                     onClick={() => handleUpdateQuantity(item, -1)}
                     disabled={qty === 0}
                     style={{
-                      width: "32px",
-                      height: "32px",
-                      borderRadius: "6px",
-                      border: "1px solid #cbd5e1",
-                      backgroundColor: qty === 0 ? "#f8fafc" : "#ffffff",
-                      color: qty === 0 ? "#94a3b8" : "#1e293b",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      color: qty === 0 ? "#cbd5e1" : "#475569",
                       fontSize: "18px",
                       fontWeight: "700",
                       cursor: qty === 0 ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      padding: "4px 8px",
                       outline: "none",
-                      transition: "all 0.15s ease",
+                      userSelect: "none",
+                      transition: "color 0.15s ease",
                     }}
                   >
-                    -
+                    —
                   </button>
                   <span
                     style={{
-                      minWidth: "24px",
+                      minWidth: "16px",
                       textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: "800",
-                      color: qty > 0 ? "#ea580c" : "#1e293b",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      color: "#1e293b",
+                      userSelect: "none",
                     }}
                   >
                     {qty}
@@ -177,20 +210,16 @@ export default function FoodSelection() {
                   <button
                     onClick={() => handleUpdateQuantity(item, 1)}
                     style={{
-                      width: "32px",
-                      height: "32px",
-                      borderRadius: "6px",
-                      border: "1px solid #cbd5e1",
-                      backgroundColor: "#ffffff",
+                      border: "none",
+                      backgroundColor: "transparent",
                       color: "#1e293b",
                       fontSize: "18px",
                       fontWeight: "700",
                       cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      padding: "4px 8px",
                       outline: "none",
-                      transition: "all 0.15s ease",
+                      userSelect: "none",
+                      transition: "color 0.15s ease",
                     }}
                   >
                     +

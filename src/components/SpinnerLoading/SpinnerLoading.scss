@@ -1,8 +1,115 @@
-@import "../connect";
-
-.loader {
-  height: 100vh;
+.world-cinema-loader {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  user-select: none;
+
+  .logo-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .logo-img {
+      width: 140px;
+      max-height: 95px;
+      object-fit: contain;
+      animation: pulseGlow 1.8s ease-in-out infinite alternate;
+      filter: drop-shadow(0 4px 16px rgba(249, 115, 22, 0.3));
+    }
+
+    // Hiệu ứng hào quang cam nhẹ trên nền trắng
+    &::after {
+      content: "";
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0) 70%);
+      z-index: -1;
+      animation: auraPulse 1.8s ease-in-out infinite alternate;
+    }
+  }
+
+  .brand-text {
+    margin-top: 18px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #f97316;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 4px rgba(249, 115, 22, 0.2);
+    animation: textFade 1.8s ease-in-out infinite alternate;
+  }
+
+  .progress-container {
+    width: 150px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 14px;
+    position: relative;
+
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 45%;
+      background: linear-gradient(90deg, #ea580c 0%, #f97316 50%, #fb923c 100%);
+      border-radius: 6px;
+      box-shadow: 0 0 6px rgba(249, 115, 22, 0.6);
+      animation: loadingSlide 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+  }
+}
+
+// Các hiệu ứng chuyển động mượt mà
+@keyframes pulseGlow {
+  0% {
+    transform: scale(0.97);
+    filter: drop-shadow(0 2px 8px rgba(249, 115, 22, 0.2));
+    opacity: 0.92;
+  }
+  100% {
+    transform: scale(1.03);
+    filter: drop-shadow(0 6px 20px rgba(249, 115, 22, 0.45));
+    opacity: 1;
+  }
+}
+
+@keyframes auraPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0.5;
+  }
+}
+
+@keyframes textFade {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loadingSlide {
+  0% {
+    left: -45%;
+  }
+  50% {
+    left: 40%;
+    width: 55%;
+  }
+  100% {
+    left: 100%;
+    width: 30%;
+  }
 }

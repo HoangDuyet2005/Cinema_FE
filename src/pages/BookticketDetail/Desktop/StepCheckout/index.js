@@ -1,12 +1,16 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
+import bookingApi from "../../../../api/bookingApi";
 
 export default function StepCheckout() {
   const history = useHistory();
   const dispatch = useDispatch();
+  const param = useParams();
+
   const activeStep = useSelector((state) => state.bookTicketReducer.activeStep);
   const currentUser = useSelector((state) => state.authReducer.currentUser);
+  const currentUserId = currentUser?.data?.id || currentUser?.id || 1;
 
   // 5 bước chuẩn chuỗi rạp:
   // 0: Chọn phim / Rạp / Suất (Đã hoàn thành trước khi vào trang này)
@@ -26,6 +30,16 @@ export default function StepCheckout() {
     if (step.id === 0) {
       history.goBack();
     } else if (step.stepIdx !== undefined && step.stepIdx < activeStep) {
+      if (step.stepIdx === 0 && param?.maLichChieu) {
+        // Khi bấm quay lại bước chọn ghế trên stepper, giải phóng ghế đang giữ
+        bookingApi
+          .releaseSeats({
+            scheduleId: Number(param.maLichChieu),
+            seatIds: [],
+            userId: Number(currentUserId),
+          })
+          .catch(() => {});
+      }
       dispatch({ type: "SET_STEP", payload: { activeStep: step.stepIdx } });
     }
   };
@@ -61,7 +75,7 @@ export default function StepCheckout() {
           if (isCurrent) {
             stepColor = "#004b91"; // Đang ở bước này (xanh đậm navy)
           } else if (isPassed) {
-            stepColor = "#0284c7"; // Đã qua rồi (xanh da trời sáng như ảnh mẫu)
+            stepColor = "#0284c7"; // Đã qua rồi (xanh da trời sáng)
           }
 
           return (

@@ -33,7 +33,7 @@ const useStyles = makeStyles({
     position: "fixed",
     top: 0,
     left: 0,
-    backgroundColor: (props) => (props.effectFadeOut ? "transparent" : "#000"),
+    backgroundColor: (props) => (props.effectFadeOut ? "transparent" : "#ffffff"),
     zIndex: -1,
     transition: "background-color 0.6s ease-in-out",
 

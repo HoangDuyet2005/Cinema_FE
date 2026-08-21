@@ -26,6 +26,7 @@ export default function BookTicketsDetail() {
     timeOut,
     isMobile,
     errorGetListSeatMessage,
+    activeStep,
   } = useSelector((state) => state.bookTicketReducer);
   const { currentUser } = useSelector((state) => state.authReducer);
 
@@ -39,7 +40,7 @@ export default function BookTicketsDetail() {
   const [scheduleData, setScheduleData] = useState(null);
   const [seat, setSeat] = useState([]);
 
-  // Kiểm tra nếu chuyển hướng từ VNPay về bước Xác Nhận
+  // 1. Kiểm tra nếu chuyển hướng từ VNPay về bước Xác Nhận
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const stepParam = searchParams.get("step");
@@ -75,7 +76,7 @@ export default function BookTicketsDetail() {
       .catch(() => {});
   }, []);
 
-  // Lấy thông tin lịch chiếu đầy đủ theo mã lịch chiếu
+  // 2. Lấy thông tin lịch chiếu đầy đủ theo mã lịch chiếu
   useEffect(() => {
     if (param?.maLichChieu) {
       bookingApi
@@ -119,9 +120,23 @@ export default function BookTicketsDetail() {
     param?.maPhong,
   ]);
 
-  // Lấy danh sách ghế của lịch chiếu
+  // 3. Tải danh sách ghế & dọn sạch ghế giữ cũ khi vào lại trang bước 0
   useEffect(() => {
     if (param?.maLichChieu) {
+      const uid = cUser?.id || currentUser?.id || 1;
+      const searchParams = new URLSearchParams(location.search);
+
+      // Nếu không phải là bước confirm -> tự động giải phóng các ghế giữ cũ của user này
+      if (searchParams.get("step") !== "confirm") {
+        bookingApi
+          .releaseSeats({
+            scheduleId: Number(param.maLichChieu),
+            seatIds: [],
+            userId: Number(uid),
+          })
+          .catch(() => {});
+      }
+
       bookingApi
         .getDanhSachPhongVe(param.maLichChieu)
         .then((response) => {
@@ -149,6 +164,34 @@ export default function BookTicketsDetail() {
       }
     };
   }, [param?.maLichChieu, cUser, currentUser, location.search, dispatch]);
+
+  // 4. BẮT SỰ KIỆN TẮT TAB / TẢI LẠI TRANG / THOÁT ĐỘT NGỘT BẰNG SEND BEACON
+  useEffect(() => {
+    const handleEmergencyRelease = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("step") !== "confirm" && param?.maLichChieu) {
+        const uid = cUser?.id || currentUser?.id || 1;
+        const payload = JSON.stringify({
+          scheduleId: Number(param.maLichChieu),
+          seatIds: [],
+          userId: Number(uid),
+        });
+        const blob = new Blob([payload], { type: "application/json" });
+
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon("http://localhost:8080/api/seats/release-seats", blob);
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleEmergencyRelease);
+    window.addEventListener("pagehide", handleEmergencyRelease);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleEmergencyRelease);
+      window.removeEventListener("pagehide", handleEmergencyRelease);
+    };
+  }, [param?.maLichChieu, cUser, currentUser]);
 
   useEffect(() => {
     let initCode = 64;

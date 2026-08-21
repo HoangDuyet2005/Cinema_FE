@@ -13,18 +13,22 @@ export default function PopUp(props) {
   const schedule = ThongTin?.schedule;
   const user = ThongTin?.user;
   const seats = ThongTin?.seats || [];
+  const foods = ThongTin?.foods || [];
   const price = ThongTin?.price != null ? Number(ThongTin.price) : 0;
   const bookingCode = ThongTin?.bookingCode || (ThongTin?.id ? `WC2026-${String(ThongTin.id).padStart(6, "0")}` : "WC2026-TICKET");
   const isCheckedIn = ThongTin?.isCheckedIn || false;
 
+  const totalFoodAmount = foods.reduce((sum, f) => sum + (f.price || 0) * (f.quantity || 1), 0);
+  const totalTicketAmount = price - totalFoodAmount;
+
   return (
-    <div className={classes.resultBookticket} style={{ padding: "20px" }}>
-      {/* QR Code & Booking Code Banner */}
+    <div className={classes.resultBookticket} style={{ padding: "20px", maxWidth: "680px", margin: "0 auto" }}>
+      {/* 1. KHUNG MÃ ĐẶT VÉ & QR CODE */}
       <div style={{
         backgroundColor: "#fff7ed",
         border: "1.5px dashed #f97316",
         borderRadius: "10px",
-        padding: "16px",
+        padding: "16px 20px",
         marginBottom: "20px",
         display: "flex",
         alignItems: "center",
@@ -37,10 +41,10 @@ export default function PopUp(props) {
             <QRCodeSVG value={bookingCode} size={90} level="H" />
           </div>
           <div>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "#ea580c", textTransform: "uppercase" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#ea580c", textTransform: "uppercase", letterSpacing: "0.5px" }}>
               MÃ ĐẶT VÉ
             </span>
-            <h4 style={{ margin: "2px 0 4px 0", fontSize: "20px", fontWeight: 800, color: "#1e293b" }}>
+            <h4 style={{ margin: "2px 0 4px 0", fontSize: "22px", fontWeight: 800, color: "#1e293b" }}>
               {bookingCode}
             </h4>
             <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>
@@ -55,7 +59,7 @@ export default function PopUp(props) {
               backgroundColor: "#dcfce7",
               color: "#166534",
               border: "1px solid #bbf7d0",
-              padding: "6px 12px",
+              padding: "6px 14px",
               borderRadius: "20px",
               fontSize: "12px",
               fontWeight: 700,
@@ -68,7 +72,7 @@ export default function PopUp(props) {
               backgroundColor: "#fef3c7",
               color: "#92400e",
               border: "1px solid #fde68a",
-              padding: "6px 12px",
+              padding: "6px 14px",
               borderRadius: "20px",
               fontSize: "12px",
               fontWeight: 700,
@@ -80,56 +84,57 @@ export default function PopUp(props) {
         </div>
       </div>
 
-      <div className={classes.infoTicked}>
-        <div className={classes.infoTicked__img}>
-          <img
-            style={{ width: "180px", borderRadius: "8px", objectFit: "cover" }}
-            src={movie?.smallImageURl || movie?.largeImageURL || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800"}
-            alt={movie?.name || "Poster Phim"}
-          />
-        </div>
-        <div className={classes.infoTicked__txt}>
-          <p className={classes.tenPhim} style={{ fontSize: "20px", fontWeight: 700, color: "#e87722" }}>
+      {/* 2. THÔNG TIN PHIM & SUẤT CHIẾU */}
+      <div className={classes.infoTicked} style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+        <img
+          style={{ width: "130px", height: "190px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
+          src={movie?.smallImageURl || movie?.largeImageURL || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800"}
+          alt={movie?.name || "Poster Phim"}
+        />
+        <div style={{ flex: 1 }}>
+          <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#ea580c", margin: "0 0 6px 0" }}>
             {movie?.name || "Thông tin phim"}
+          </h3>
+          <p style={{ fontSize: "13.5px", fontWeight: 700, color: "#1e293b", margin: "0 0 4px 0" }}>
+            {branch?.name || "WORLD CINEMA"}
           </p>
-          <p className={classes.text__first}>
-            <span>{branch?.name ? branch.name.split("-")[0] : "Rạp"}</span>
-            {branch?.phoneNo && <span className={classes.text__second}> - {branch.phoneNo}</span>}
+          <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 10px 0" }}>
+            {branch?.address || ""}
           </p>
-          <p className={classes.diaChi}>{branch?.address || ""}</p>
-          <table className={classes.table}>
+
+          <table style={{ width: "100%", fontSize: "13px", lineHeight: "1.8" }}>
             <tbody>
               <tr>
-                <td valign="top" style={{ width: "100px", fontWeight: 600 }}>Lịch chiếu:</td>
-                <td valign="top">
-                  {schedule?.startTime ? `${schedule.startTime}, ` : ""}
-                  {schedule?.startDate ? formatDate(schedule.startDate).dateFull : "N/A"}
+                <td style={{ width: "110px", fontWeight: 600, color: "#475569" }}>Suất chiếu:</td>
+                <td>
+                  <b>{schedule?.startTime ? `${schedule.startTime}, ` : ""}</b>
+                  {schedule?.startDate ? (formatDate(schedule.startDate)?.dateFull || schedule.startDate) : "N/A"}
                 </td>
               </tr>
               <tr>
-                <td valign="top" style={{ fontWeight: 600 }}>Phòng chiếu:</td>
-                <td>{room?.name || "N/A"}</td>
+                <td style={{ fontWeight: 600, color: "#475569" }}>Phòng chiếu:</td>
+                <td><b>{room?.name || "Phòng 101"} ({room?.format || "2D"})</b></td>
               </tr>
               <tr>
-                <td valign="top" style={{ fontWeight: 600 }}>Ghế:</td>
+                <td style={{ fontWeight: 600, color: "#475569" }}>Ghế đã đặt:</td>
                 <td>
                   {seats.length > 0 ? (
                     seats.map((seat, index) => (
                       <span
                         key={index}
                         style={{
-                          backgroundColor: "#f26b38",
+                          backgroundColor: "#ea580c",
                           color: "#fff",
                           padding: "2px 8px",
                           borderRadius: "4px",
-                          fontWeight: 600,
+                          fontWeight: 700,
                           fontSize: "12px",
                           marginRight: "6px",
                           display: "inline-block",
                           marginBottom: "4px"
                         }}
                       >
-                        {seat?.name || seat}
+                        Ghế {seat?.name || seat}
                       </span>
                     ))
                   ) : (
@@ -142,54 +147,92 @@ export default function PopUp(props) {
         </div>
       </div>
 
-      <div style={{ marginTop: "20px", borderTop: "1px dashed #e2e8f0", paddingTop: "15px" }}>
-        <h3 className={classes.infoResult_label} style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>
-          Thông tin hóa đơn thanh toán
-        </h3>
-        <table className={`${classes.table} table`}>
+      {/* 3. CHI TIẾT BẮP NƯỚC & COMBO ĐÃ ĐẶT (NẾU CÓ) */}
+      {foods.length > 0 && (
+        <div style={{ marginTop: "20px", backgroundColor: "#f8fafc", padding: "16px 20px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+          <h4 style={{ fontSize: "14px", fontWeight: 800, color: "#1e293b", margin: "0 0 10px 0" }}>
+            🍿 Danh sách Combo & Bắp Nước ({foods.length} sản phẩm)
+          </h4>
+          <table style={{ width: "100%", fontSize: "13px", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #cbd5e1", color: "#64748b", fontSize: "12px", textAlign: "left" }}>
+                <th style={{ paddingBottom: "6px" }}>Tên sản phẩm</th>
+                <th style={{ paddingBottom: "6px", textAlign: "center" }}>Số lượng</th>
+                <th style={{ paddingBottom: "6px", textAlign: "right" }}>Đơn giá</th>
+                <th style={{ paddingBottom: "6px", textAlign: "right" }}>Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              {foods.map((item, idx) => (
+                <tr key={idx} style={{ borderBottom: "1px dashed #e2e8f0", height: "36px" }}>
+                  <td style={{ fontWeight: 600, color: "#1e293b" }}>{item.foodName || item.name}</td>
+                  <td style={{ textAlign: "center" }}>x{item.quantity}</td>
+                  <td style={{ textAlign: "right", color: "#64748b" }}>{(item.price || 0).toLocaleString("vi-VN")} đ</td>
+                  <td style={{ textAlign: "right", fontWeight: 700, color: "#1e293b" }}>
+                    {((item.price || 0) * (item.quantity || 1)).toLocaleString("vi-VN")} đ
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 4. THÔNG TIN HÓA ĐƠN & PHÂN RÃ CHI PHÍ */}
+      <div style={{ marginTop: "20px", borderTop: "1px dashed #cbd5e1", paddingTop: "15px" }}>
+        <h4 style={{ fontSize: "15px", fontWeight: 800, color: "#1e293b", margin: "0 0 12px 0" }}>
+          Thông tin thanh toán
+        </h4>
+        <table style={{ width: "100%", fontSize: "13px", lineHeight: "1.8" }}>
           <tbody>
             <tr>
-              <td valign="top" style={{ width: "140px", fontWeight: 600 }}>Mã hóa đơn:</td>
-              <td valign="top"><strong>#{ThongTin?.id || "N/A"}</strong> ({bookingCode})</td>
+              <td style={{ width: "160px", color: "#64748b" }}>Mã hóa đơn:</td>
+              <td><strong>#{ThongTin?.id || "N/A"}</strong> ({bookingCode})</td>
             </tr>
             <tr>
-              <td valign="top" style={{ fontWeight: 600 }}>Người đặt vé:</td>
-              <td>{user?.name || user?.username || "Khách hàng"}</td>
+              <td style={{ color: "#64748b" }}>Khách hàng:</td>
+              <td>{user?.name || user?.username || "Khách hàng"} ({user?.email || ""})</td>
             </tr>
             <tr>
-              <td valign="top" style={{ fontWeight: 600 }}>Email:</td>
-              <td>{user?.email || "N/A"}</td>
-            </tr>
-            <tr>
-              <td valign="top" style={{ fontWeight: 600 }}>Trạng thái thanh toán:</td>
+              <td style={{ color: "#64748b" }}>Trạng thái thanh toán:</td>
               <td>
-                {ThongTin?.status === "SUCCESS" && <span style={{ color: "#16a34a", fontWeight: 700 }}>✅ Đã thanh toán</span>}
+                {ThongTin?.status === "SUCCESS" && <span style={{ color: "#16a34a", fontWeight: 700 }}>✅ Đã thanh toán thành công</span>}
                 {ThongTin?.status === "WAITING_PAYMENT" && <span style={{ color: "#d97706", fontWeight: 700 }}>⏳ Chờ thanh toán</span>}
                 {ThongTin?.status === "EXPIRATION" && <span style={{ color: "#dc2626", fontWeight: 700 }}>❌ Đã hủy / Hết hạn</span>}
                 {!ThongTin?.status && <span>N/A</span>}
               </td>
             </tr>
             <tr>
-              <td valign="top" style={{ fontWeight: 600 }}>Số lượng vé:</td>
-              <td valign="top"><span>{ThongTin?.amountTicket || seats.length || 0} vé</span></td>
+              <td style={{ color: "#64748b" }}>Tiền vé xem phim ({seats.length} vé):</td>
+              <td><b>{totalTicketAmount.toLocaleString("vi-VN")} đ</b></td>
             </tr>
-            <tr>
-              <td valign="top" style={{ fontWeight: 600 }}>Tổng tiền:</td>
-              <td valign="top"><strong style={{ color: "#e87722", fontSize: "16px" }}>{price.toLocaleString("vi-VN")} đ</strong></td>
+            {foods.length > 0 && (
+              <tr>
+                <td style={{ color: "#64748b" }}>Tiền bắp nước ({foods.length} món):</td>
+                <td><b>{totalFoodAmount.toLocaleString("vi-VN")} đ</b></td>
+              </tr>
+            )}
+            <tr style={{ borderTop: "1px solid #e2e8f0" }}>
+              <td style={{ fontWeight: 700, fontSize: "14px", color: "#1e293b", paddingTop: "8px" }}>Tổng cộng thanh toán:</td>
+              <td style={{ paddingTop: "8px" }}>
+                <strong style={{ color: "#ea580c", fontSize: "17px", fontWeight: 900 }}>
+                  {price.toLocaleString("vi-VN")} đ
+                </strong>
+              </td>
             </tr>
           </tbody>
         </table>
 
-        <div style={{ textAlign: "right", marginTop: "15px" }}>
+        <div style={{ textAlign: "right", marginTop: "16px" }}>
           <button
             onClick={() => window.print()}
             style={{
               backgroundColor: "#f8fafc",
               color: "#334155",
               border: "1px solid #cbd5e1",
-              padding: "8px 16px",
+              padding: "10px 20px",
               borderRadius: "6px",
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: "13px",
               cursor: "pointer"
             }}
