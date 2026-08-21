@@ -6,8 +6,8 @@ const useStyles = makeStyles({
     backgroundRepeat: "no-repeat",
     backgroundSize: "cover",
     backgroundPosition: "center",
-    paddingTop: "147.9%",
-    borderRadius: 4,
+    paddingTop: "148%",
+    borderRadius: 8,
   },
 })
 

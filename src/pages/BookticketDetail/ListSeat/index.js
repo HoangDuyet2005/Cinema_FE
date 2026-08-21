@@ -1,20 +1,19 @@
 import React, { useRef, useEffect, useState } from "react";
-
 import SeatIcon from "@material-ui/icons/CallToActionRounded";
 import { useSelector, useDispatch } from "react-redux";
 import Countdown from "../Countdown";
-
 import useStyles from "./style";
-import { colorTheater, logoTheater } from "../../../constants/theaterData";
 import formatDate from "../../../utilities/formatDate";
 import {
   CHANGE_LISTSEAT,
   SET_ALERT_OVER10,
 } from "../../../reducers/constants/BookTicket";
 import TenCumRap from "../../../components/TenCumRap";
-import poster from "../../../assets/posterBG.jpg"
 import { useParams } from "react-router-dom";
 import bookingApi from "../../../api/bookingApi";
+import SockJS from "sockjs-client";
+import { Stomp } from "@stomp/stompjs";
+import Swal from "sweetalert2";
 
 export default function ListSeat() {
   const {
@@ -23,114 +22,181 @@ export default function ListSeat() {
     danhSachPhongVe: { thongTinPhim },
     thongTinPhongVe,
   } = useSelector((state) => state.bookTicketReducer);
-  // console.log("-------", listSeat);
-  // console.log("------sdas-", thongTinPhongVe);
+
+  const { currentUser } = useSelector((state) => state.authReducer);
+  const currentUserId = currentUser?.data?.id || currentUser?.id || 1;
+
   const domToSeatElement = useRef(null);
+  const stompClientRef = useRef(null);
   const [widthSeat, setWidthSeat] = useState(0);
   const [soGhe, setSoGhe] = useState(1);
-
-  const [thongTin, setThongTin] = useState()
+  const [thongTin, setThongTin] = useState();
   const param = useParams();
 
-  // console.log(param.maPhim, param.maRap, param.ngayChieu, param.gioChieu, param.maPhong);
   useEffect(() => {
-    // lấy thongTinPhim và danhSachGhe
-    // dispatch(getListSeat(param.maLichChieu));
-    bookingApi.getLichChieuChiTietHeThong(param.maPhim, param.maRap, param.ngayChieu, param.gioChieu, param.maPhong)
-    .then((response) =>{
-      // console.log(response.data.data);
-      setThongTin(response.data);
-      // dispatch({
-      //   type: GET_LISTSEAT_SUCCESS,
-      //   payload: { data: response.data.data }
-      // })
-    })
-    .catch((err) => {
-      // console.log(err);
-    })
-    // return () => {
-    //   // xóa dữ liệu khi đóng hủy component
-    //   dispatch({ type: RESET_DATA_BOOKTICKET });
-    // };
-  }, []);
-  
+    bookingApi
+      .getScheduleById(param.maLichChieu)
+      .then((response) => {
+        if (response?.data?.data) {
+          setThongTin({ data: { content: [response.data.data] } });
+        }
+      })
+      .catch(() => {
+        if (param.maPhim && param.maRap && param.ngayChieu && param.gioChieu && param.maPhong) {
+          bookingApi
+            .getLichChieuChiTietHeThong(param.maPhim, param.maRap, param.ngayChieu, param.gioChieu, param.maPhong)
+            .then((response) => {
+              setThongTin(response.data);
+            })
+            .catch(() => {});
+        }
+      });
+  }, [param.maLichChieu, param.maPhim, param.maRap, param.ngayChieu, param.gioChieu, param.maPhong]);
+
+  const scheduleItem = thongTin?.data?.content?.[0] || thongTinPhongVe?.data?.content?.[0];
+
   const classes = useStyles({
-    // color: colorTheater[thongTinPhongVe?.setRap?.slice(0,3).toUpperCase()],
-    //color: "white",
-    modalLeftImg: thongTin?.data?.content[0]?.movie?.smallImageURl,
-   // modalLeftImg: poster,
+    modalLeftImg: scheduleItem?.movie?.smallImageURl || "/img/movies/attack-on-titan-2_1785484162552.jpg",
     isMobile,
     widthLabel: widthSeat / 2,
   });
   const dispatch = useDispatch();
 
+  // WebSocket Subscription
   useEffect(() => {
-    // khởi tạo event lắng nghe "resize"
+    let stompClient = null;
+    let socket = null;
+    try {
+      socket = new SockJS("http://localhost:8080/ws-cinema");
+      stompClient = Stomp.over(socket);
+      stompClient.debug = () => {};
+
+      stompClient.connect(
+        {},
+        () => {
+          stompClientRef.current = stompClient;
+          if (param?.maLichChieu) {
+            stompClient.send("/app/seats/register", {}, JSON.stringify({
+              scheduleId: Number(param.maLichChieu),
+              userId: Number(currentUserId)
+            }));
+
+            stompClient.subscribe(`/topic/seats/${param.maLichChieu}`, (message) => {
+              try {
+                const event = JSON.parse(message.body);
+                if (event.userId && Number(event.userId) === Number(currentUserId)) {
+                  return;
+                }
+                if (event.holdingSeatIds) {
+                  dispatch({
+                    type: "SYNC_HOLDING_SEATS",
+                    payload: { holdingSeatIds: event.holdingSeatIds },
+                  });
+                } else if (event.seatId) {
+                  dispatch({
+                    type: "UPDATE_SEAT_REALTIME",
+                    payload: { seatId: event.seatId, isOccupied: event.isOccupied },
+                  });
+                }
+              } catch (err) {
+                console.error("Error processing WS message:", err);
+              }
+            });
+          }
+        },
+        (err) => {
+          console.warn("WebSocket connection warning:", err);
+        }
+      );
+    } catch (e) {
+      console.warn("SockJS init error:", e);
+    }
+
+    return () => {
+      if (stompClientRef.current) {
+        try {
+          stompClientRef.current.disconnect();
+        } catch (e) {}
+      }
+    };
+  }, [param?.maLichChieu, currentUserId]);
+
+  useEffect(() => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
   useEffect(() => {
     handleResize();
-  }, [listSeat]); // sau khi có listSeat thì run handleResize để lấy giá trị đầu tiên
+  }, [listSeat]);
+
   const handleResize = () => {
     setWidthSeat(domToSeatElement?.current?.offsetWidth);
   };
 
- 
-
   const handleSelectedSeat = (seatSelected) => {
-    if (seatSelected.isOccupied) {
-      // click vào ghế đã có người chọn
+    if (seatSelected.isOccupied === 1) {
+      Swal.fire({
+        title: "Ghế đã được đặt!",
+        text: "Ghế này đã có người đặt và thanh toán thành công.",
+        icon: "info",
+        confirmButtonColor: "#f26b38",
+      });
       return;
     }
-    // đổi lại giá trị selected của ghế đã chọn
+
+    if (seatSelected.isOccupied === 2) {
+      Swal.fire({
+        title: "Ghế đã bị khóa!",
+        text: "Ghế này đã có người chuyển sang trang thanh toán trước. Vui lòng chọn ghế khác.",
+        icon: "warning",
+        confirmButtonColor: "#f26b38",
+      });
+      return;
+    }
+
+    const isNowSelected = !seatSelected.selected;
     let newListSeat = listSeat.map((seat) => {
       if (seatSelected.id === seat.id) {
-        return { ...seat, selected: !seat.selected };
+        return { ...seat, selected: isNowSelected };
       }
       return seat;
     });
-    // cập nhật lại danh sách hiển thị ghế đã chọn
+
     const newListSeatSelected = newListSeat?.reduce(
-      (newListSeatSelected, seat) => {
+      (acc, seat) => {
         if (seat.selected) {
-          return [...newListSeatSelected, seat.name];
+          return [...acc, seat.name || seat.label];
         }
-        return newListSeatSelected;
+        return acc;
       },
       []
     );
-    // thông báo nếu chọn quá 10 ghế
+
     if (newListSeatSelected.length > soGhe) {
-      console.log("dispatch: ", soGhe);
       dispatch({
         type: SET_ALERT_OVER10,
       });
       return;
     }
-    // cập nhật lại danhSachVe dùng để booking
-    const danhSachVe = newListSeat?.reduce((danhSachVe, seat) => {
-      if (seat.selected) {
-        return [...danhSachVe, { id: seat.id}];//giá vé nè thay vô
-      }
-      return danhSachVe;
-    }, []);
-    // cập nhật biến kiểm tra đã có ghế nào được chọn chưa
-    const isSelectedSeat = newListSeatSelected.length > 0 ? true : false;
-    // tính lại tổng tiền
-    const amount = newListSeat?.reduce((amount, seat) => {
-      if (seat.selected) {
-        if(seat.type === "NORMAL")
-        {
-          return (amount += 70000);
-        }
-        else {
-          return (amount += 80000)
-        }
 
+    const danhSachVe = newListSeat?.reduce((acc, seat) => {
+      if (seat.selected) {
+        return [...acc, { id: seat.id }];
       }
-      return amount;
+      return acc;
+    }, []);
+
+    const isSelectedSeat = newListSeatSelected.length > 0;
+    const basePrice = scheduleItem?.price || 95000;
+    const amount = newListSeat?.reduce((sum, seat) => {
+      if (seat.selected) {
+        const p = (seat.seatType === "VIP" || seat.type === "VIP") ? basePrice + 10000 : basePrice;
+        return sum + p;
+      }
+      return sum;
     }, 0);
+
     dispatch({
       type: CHANGE_LISTSEAT,
       payload: {
@@ -142,59 +208,62 @@ export default function ListSeat() {
       },
     });
   };
+
   const color = (seat) => {
-    let color;
-    if (seat.type === "NORMAL") {
-      color = "#3e515d";
-    }
-    if (seat.type === "VIP") {
-      color = "#f7b500";
-    }
     if (seat.selected) {
-      color = "#44c020";
+      return "#44c020";
     }
-    if (seat.isOccupied) {
-      color = "#99c5ff";
+    if (seat.isOccupied === 1) {
+      return "#99c5ff";
     }
-    return color;
+    if (seat.isOccupied === 2) {
+      return "#ec4899";
+    }
+    if (seat.seatType === "VIP" || seat.type === "VIP") {
+      return "#f7b500";
+    }
+    return "#3e515d";
   };
 
-  const handlerSoGhe =(e) =>{
-    setSoGhe(e.target.value);
-  }
-  console.log("soGhe: ",soGhe);
-  const handlerXacNhanSoGhe =()=>{
-    // setSoGhe(soGhe)
-    console.log("xác nhận", soGhe);
-  }
+  const handlerSoGhe = (e) => {
+    const val = Number(e.target.value);
+    setSoGhe(val > 0 ? val : 1);
+  };
+
   return (
     <main className={classes.listSeat}>
       {/* thông tin phim */}
       <div className={classes.info_CountDown}>
         <div className={classes.infoTheater}>
           <img
-            src={thongTin?.data?.content[0]?.movie?.smallImageURl}
+            src={scheduleItem?.movie?.smallImageURl || "/img/movies/attack-on-titan-2_1785484162552.jpg"}
             alt="phim"
-            style={{ width: 70, height: 100 }}
+            style={{ width: 70, height: 100, borderRadius: "4px", objectFit: "cover" }}
           />
           <div className={classes.text}>
-            <TenCumRap tenCumRap={thongTin?.data?.content[0]?.branch?.name} giaVe={thongTin?.data?.content[0]?.price}/>
+            <TenCumRap
+              tenCumRap={scheduleItem?.branch?.name || "WORLD CINEMA Hà Đông"}
+              giaVe={scheduleItem?.price || 95000}
+            />
             <p className={classes.textTime}>{`${
-              thongTin && formatDate(thongTin?.data?.content[0]?.startDate).dayToday
-            } - ${thongTin?.data?.content[0]?.startDate} - ${thongTin?.data?.content[0]?.movie?.rated}`}</p>
+              scheduleItem?.startDate ? formatDate(scheduleItem.startDate).dayToday : "Hôm nay"
+            } - ${scheduleItem?.startDate || "2026-08-21"} - ${scheduleItem?.movie?.rated || "T16"}`}</p>
           </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
           <input
             style={{
-              display:"flex",
-              justifyContent:"center",
-              textAlign:"center",
-              margin:"1rem",
-              border:"1px solid orange",
-              backgroundColor:"black",
-              color:"white",
-              height:"2rem",
-              witdth:"3rem",
-              fontSize:"1.5rem"
+              backgroundColor: "black",
+              color: "white",
+              border: "1px solid yellow",
+              width: "2.8rem",
+              height: "2.2rem",
+              fontSize: "1.4rem",
+              textAlign: "center",
+              marginRight: "6px",
+              fontWeight: 700,
+              borderRadius: "4px"
             }}
             value={soGhe}
             type="number"
@@ -204,16 +273,22 @@ export default function ListSeat() {
             onChange={(e) => handlerSoGhe(e)}
           />
           <h4
-          style={{
-            display:"flex",
-            justifyContent:"center",
-            textAlign:"center",
-            marginTop:"1.2rem",
-            height:"2rem",
-            witdth:"3rem",
-          }}
-          > Ghế</h4>
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              textAlign: "center",
+              margin: 0,
+              height: "2.2rem",
+              lineHeight: "2.2rem",
+              fontWeight: 600,
+              fontSize: "16px",
+              color: "#333"
+            }}
+          >
+            Ghế
+          </h4>
         </div>
+
         <div className={classes.countDown}>
           <p className={classes.timeTitle}>Thời gian đặt giới hạn</p>
           <Countdown />
@@ -238,54 +313,72 @@ export default function ListSeat() {
               >
                 {/* label A B C ... đầu mỗi row */}
                 {(i === 0 || i % 16 === 0) && (
-                  <p className={classes.label}>{seat.name.slice(0, 1)}</p>
+                  <p className={classes.label}>{seat.name ? seat.name.slice(0, 1) : seat.label.slice(0, 1)}</p>
                 )}
-                {/* số ghế thứ tự của ghế */}
+
+                {/* số ghế thứ tự của ghế khi đang chọn */}
                 {seat.selected && (
                   <p className={classes.seatName}>
-                    {Number(seat.name.slice(1)) < 10
-                      ? seat.name.slice(1)
-                      : seat.name.slice(1)}
+                    {Number(seat.name ? seat.name.slice(1) : seat.label.slice(1)) < 10
+                      ? (seat.name ? seat.name.slice(1) : seat.label.slice(1))
+                      : (seat.name ? seat.name.slice(1) : seat.label.slice(1))}
                   </p>
                 )}
-                {seat.isOccupied === 0 && (
+
+                {/* số ghế khi còn trống */}
+                {seat.isOccupied === 0 && !seat.selected && (
                   <p className={classes.seatName}>
-                    {Number(seat.name.slice(1)) < 10
-                      ? seat.name.slice(1)
-                      : seat.name.slice(1)}
+                    {Number(seat.name ? seat.name.slice(1) : seat.label.slice(1)) < 10
+                      ? (seat.name ? seat.name.slice(1) : seat.label.slice(1))
+                      : (seat.name ? seat.name.slice(1) : seat.label.slice(1))}
                   </p>
                 )}
+
                 {/* label ghế đã có người đặt */}
-                {seat.isOccupied === 1 && (
+                {seat.isOccupied === 1 && !seat.selected && (
                   <img
                     className={classes.seatLocked}
                     src="/img/bookticket/notchoose.png"
                     alt="notchoose"
                   />
                 )}
+
+                {/* label ghế đã bị khóa */}
+                {seat.isOccupied === 2 && !seat.selected && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "40%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      fontSize: "12px",
+                      zIndex: 2,
+                      userSelect: "none",
+                      pointerEvents: "none"
+                    }}
+                  >
+                    🔒
+                  </span>
+                )}
+
                 {/* icon ghế */}
                 <SeatIcon
                   style={{ color: color(seat) }}
                   className={classes.seatIcon}
                 />
-                {/* đường viền chỉ vùng ghế */}
-                {/* {seat.name === "C8" &&(
-                  <img
-                    className={classes.viewCenter}
-                    src="/img/bookticket/seatcenter.png"
-                    alt="seatcenter"
-                  />
-                )} */}
+
                 {/* vùng bắt sự kiện click */}
                 <div
                   className={classes.areaClick}
                   onClick={() => handleSelectedSeat(seat)}
+                  style={{ cursor: seat.isOccupied ? "not-allowed" : "pointer" }}
                 ></div>
               </div>
             ))}
           </div>
         </div>
       </div>
+
       {/* thông tin các loại ghế */}
       <div className={classes.noteSeat}>
         <div className={classes.typeSeats}>
@@ -303,22 +396,19 @@ export default function ListSeat() {
           </div>
           <div>
             <div style={{ position: "relative" }}>
+              <span className={classes.posiX} style={{ fontSize: "14px", lineHeight: 1 }}>🔒</span>
+              <SeatIcon style={{ color: "#ec4899", fontSize: 27 }} />
+            </div>
+            <p>Đã khóa</p>
+          </div>
+          <div>
+            <div style={{ position: "relative" }}>
               <p className={classes.posiX}>x</p>
               <SeatIcon style={{ color: "#99c5ff", fontSize: 27 }} />
             </div>
             <p>Đã đặt</p>
           </div>
         </div>
-        {/* <div className={classes.positionView}>
-          <span>
-            <span className={classes.linecenter} />
-            <span>Ở giữ</span>
-          </span>
-          <span className={classes.line}>
-            <span className={classes.linebeautiful} />
-            <span>View đẹp</span>
-          </span>
-        </div> */}
       </div>
 
       {/* modalleft */}

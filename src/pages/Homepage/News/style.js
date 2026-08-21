@@ -1,19 +1,39 @@
-﻿import { makeStyles } from "@material-ui/core"
+import { makeStyles } from "@material-ui/core";
 
-const useStyle = makeStyles(theme => ({
+const useStyle = makeStyles((theme) => ({
   root: {
-    padding: "30px 0 10px 0",
+    padding: "35px 0 25px 0",
     width: "100%",
+  },
+
+  sliderWrapper: {
+    position: "relative",
+    width: "100%",
+
+    "& .slick-list": {
+      margin: "0 -10px",
+    },
+
+    "& .slick-slide > div": {
+      padding: "0 10px",
+    },
+  },
+
+  slideItem: {
+    outline: "none",
   },
 
   newsCard: {
     display: "block",
     textDecoration: "none",
     color: "#333",
+    outline: "none",
+    transition: "transform 0.25s ease",
+
     "&:hover": {
       textDecoration: "none",
       "& $fullImg": {
-        transform: "translateY(-4px) scale(1.02)",
+        transform: "scale(1.04)",
       },
       "& $newsTitle": {
         color: "#034ea2",
@@ -22,41 +42,36 @@ const useStyle = makeStyles(theme => ({
   },
 
   imgWrapper: {
+    width: "100%",
+    aspectRatio: "16 / 10",
     borderRadius: 8,
     overflow: "hidden",
     boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
+    backgroundColor: "#f1f5f9",
   },
 
   fullImg: {
     width: "100%",
-    height: 220,
+    height: "100%",
     objectFit: "cover",
     borderRadius: 8,
     transition: "transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
   },
 
   newsTitle: {
-    fontSize: 16,
+    fontSize: 14.5,
     fontWeight: 700,
-    color: "#222",
-    lineHeight: 1.4,
-    margin: "8px 0 0 0",
+    color: "#1e293b",
+    lineHeight: 1.45,
+    margin: "12px 0 0 0",
+    textAlign: "center",
     display: "-webkit-box",
     "-webkit-line-clamp": 2,
     "-webkit-box-orient": "vertical",
     overflow: "hidden",
-    transition: "color 0.25s ease",
+    height: 42,
+    transition: "color 0.2s ease",
   },
+}));
 
-  repons: {
-    padding: "0 10px",
-    flex: "0 0 50%",
-    maxWidth: "50%",
-    [theme.breakpoints.down(579)]: {
-      flex: "0 0 100%",
-      maxWidth: "100%",
-      padding: 0,
-    },
-  },
-}))
-export default useStyle
+export default useStyle;

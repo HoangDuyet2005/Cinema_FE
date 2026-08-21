@@ -1,4 +1,4 @@
-﻿import { NavLink, useHistory } from "react-router-dom";
+import { NavLink, useHistory } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { IconButton, makeStyles } from "@material-ui/core";
@@ -27,6 +27,7 @@ import {
 import { getComment } from "../../reducers/actions/MovieDetail";
 import usersApi from "../../api/usersApi";
 import reviewsApi from "../../api/billsApi";
+import bookingApi from "../../api/bookingApi";
 import { getAllTicket } from "../../reducers/actions/Ticket";
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -308,17 +309,25 @@ export default function Index() {
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const classes = useStyles();
   const dispatch = useDispatch();
+  const { currentUser } = useSelector((state) => state.authReducer);
   const { successInfoUser, loadingInfoUser, loadingUpdateUser } = useSelector(
     (state) => state.usersManagementReducer
   );
+
+  const effectiveUser =
+    successInfoUser?.data ||
+    successInfoUser ||
+    currentUser?.data ||
+    currentUser ||
+    {};
   const { billListChuaTT } = useSelector((state) => state.billsManagementReducer);
 
   const [value, setValue] = React.useState(0);
   const [typePassword, settypePassword] = useState("password");
   const [typePassword2, settypePassword2] = useState("password");
   const [typePassword3, settypePassword3] = useState("password");
-  const [image, setImage] = useState(successInfoUser?.data?.image || "");
-  const [previewImage, setPreviewImage] = useState(successInfoUser?.data?.image || "");
+  const [image, setImage] = useState(effectiveUser?.image || "");
+  const [previewImage, setPreviewImage] = useState(effectiveUser?.image || "");
   const [isUploading, setIsUploading] = useState(false);
   const [savedArticle, setSavedArticle] = useState([]);
   const [wroteArticle, setWroteArticle] = useState([]);
@@ -326,6 +335,17 @@ export default function Index() {
   const [toggle, setToggle] = useState(false);
   const [open, setOpen] = React.useState(false);
 
+  const handlePayBill = async (amount, billId) => {
+    try {
+      const res = await bookingApi.createPaymentUrl(amount, billId);
+      if (res?.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error("Lỗi tạo link thanh toán:", err);
+      Swal.fire("Lỗi", "Không thể tạo liên kết thanh toán VNPay", "error");
+    }
+  };
   const getTicketDetail = (id) => {
     reviewsApi.getBillByID(id).then((response) => {
       setTicketDetail(response.data);
@@ -338,32 +358,35 @@ export default function Index() {
   };
 
   const handleLikeClick2 = ({ id }) => {
-    eventsApi.addSaveArticle({ userId: successInfoUser?.data?.id, articleId: id });
+    eventsApi.addSaveArticle({ userId: effectiveUser?.id, articleId: id });
   };
 
   useEffect(() => {
-    if (successInfoUser?.data?.id) {
-      dispatch(getBillsChuaThanhToan(successInfoUser.data.id));
-      dispatch(getAllTicket(successInfoUser.data.id));
-      dispatch(getBillsUserId(successInfoUser.data.id));
-      eventsApi.getAllSavedArticle(successInfoUser.data.id).then((res) => {
-        setSavedArticle(res?.data?.data?.content || []);
-      });
-      eventsApi.getAll().then((res) => {
-        setWroteArticle(res?.data?.data || []);
-      });
-    } else {
-      dispatch(getInfoUser());
-    }
+    dispatch(getInfoUser());
     dispatch(getComment());
-  }, [dispatch, successInfoUser?.data?.id]);
+  }, [dispatch]);
 
   useEffect(() => {
-    if (successInfoUser?.data?.image) {
-      setImage(successInfoUser.data.image);
-      setPreviewImage(successInfoUser.data.image);
+    const userId = effectiveUser?.id;
+    if (userId) {
+      dispatch(getBillsChuaThanhToan(userId));
+      dispatch(getAllTicket(userId));
+      dispatch(getBillsUserId(userId));
+      eventsApi.getAllSavedArticle(userId).then((res) => {
+        setSavedArticle(res?.data?.data?.content || res?.data?.data || res?.data || []);
+      }).catch((e) => console.log(e));
+      eventsApi.getAll().then((res) => {
+        setWroteArticle(res?.data?.data?.content || res?.data?.data || res?.data || []);
+      }).catch((e) => console.log(e));
     }
-  }, [successInfoUser?.data?.image]);
+  }, [dispatch, effectiveUser?.id]);
+
+  useEffect(() => {
+    if (effectiveUser?.image) {
+      setImage(effectiveUser.image);
+      setPreviewImage(effectiveUser.image);
+    }
+  }, [effectiveUser?.image]);
 
   useEffect(() => {
     if (successInfoUser?.data?.username) {
@@ -465,7 +488,7 @@ export default function Index() {
   const handleSubmitChangePass = (pass) => {
     if (loadingUpdateUser) return;
     if (pass.newpassword === pass.renewpassword) {
-      dispatch(putUserChangePass(pass.newpassword, pass.oldpassword));
+      dispatch(putUserChangePass(pass.newpassword, pass.oldpassword, history));
     } else {
       Swal.fire({
         position: "center",
@@ -487,9 +510,10 @@ export default function Index() {
     settypePassword3(typePassword3 === "password" ? "text" : "password");
   };
 
-  const roleText = successInfoUser?.data?.role?.includes("ROLE_ADMIN")
+  const roleStr = JSON.stringify(effectiveUser?.role || effectiveUser?.roles || "");
+  const roleText = roleStr.includes("ROLE_ADMIN")
     ? "Quản trị viên"
-    : successInfoUser?.data?.role?.includes("ROLE_STAFF")
+    : roleStr.includes("ROLE_STAFF")
     ? "Nhân viên"
     : "Thành viên";
 
@@ -504,14 +528,14 @@ export default function Index() {
                 src={
                   (typeof previewImage === "string" && previewImage) ||
                   (typeof image === "string" && image) ||
-                  successInfoUser?.data?.image ||
+                  effectiveUser?.image ||
                   FAKE_AVATAR
                 }
                 className={classes.avatarImg}
                 alt="avatar"
               />
               <div className={classes.userName}>
-                {successInfoUser?.data?.name || successInfoUser?.data?.username || "Tài khoản"}
+                {effectiveUser?.name || effectiveUser?.username || "Tài khoản"}
               </div>
               <div className={classes.userRoleBadge}>{roleText}</div>
 
@@ -639,12 +663,12 @@ export default function Index() {
                 <TabPanel value={value} index={0}>
                   <Formik
                     initialValues={{
-                      username: successInfoUser?.data?.username ?? "",
-                      password: successInfoUser?.data?.password ?? "",
-                      email: successInfoUser?.data?.email ?? "",
-                      id: successInfoUser?.data?.id ?? "",
-                      name: successInfoUser?.data?.name ?? "",
-                      image: successInfoUser?.data?.image ?? "",
+                      username: effectiveUser?.username || "",
+                      password: effectiveUser?.password || "",
+                      email: effectiveUser?.email || "",
+                      id: effectiveUser?.id || "",
+                      name: effectiveUser?.name || effectiveUser?.username || "",
+                      image: effectiveUser?.image || "",
                     }}
                     enableReinitialize
                     validationSchema={updateUserSchema}
@@ -732,14 +756,39 @@ export default function Index() {
 
                 {/* TAB 1: LỊCH SỬ GIAO DỊCH */}
                 <TabPanel value={value} index={1}>
-                  {toggle && (
-                    <div style={{ position: "fixed", borderRadius: "8px", top: "15%", left: "10%", backgroundColor: "white", zIndex: 10000, width: "80%", height: "70%", overflow: "scroll", boxShadow: "0 8px 30px rgba(0,0,0,0.3)" }}>
+                  <Dialog
+                    open={toggle}
+                    TransitionComponent={Transition}
+                    keepMounted
+                    onClose={() => setToggle(false)}
+                    maxWidth="md"
+                    fullWidth
+                  >
+                    <DialogTitle style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", padding: "14px 20px" }}>
+                      <span style={{ fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>
+                        Chi tiết vé xem phim #{ticketDetail?.data?.id || ticketDetail?.id || ""}
+                      </span>
+                      <Button
+                        size="small"
+                        onClick={() => setToggle(false)}
+                        style={{ minWidth: "36px", color: "#64748b", fontSize: "16px" }}
+                      >
+                        ✕
+                      </Button>
+                    </DialogTitle>
+                    <DialogContent style={{ padding: "10px 16px" }}>
                       <DetailPopup ThongTin={ticketDetail} />
-                      <div onClick={() => setToggle(false)} style={{ position: "absolute", right: "0px", top: "0px", backgroundColor: "#e87722", color: "#fff", padding: "10px", display: "flex", justifyContent: "center", alignItems: "center", cursor: "pointer", borderRadius: "0 0 0 8px" }}>
-                        <CloseFullscreenIcon />
-                      </div>
-                    </div>
-                  )}
+                    </DialogContent>
+                    <DialogActions style={{ padding: "12px 20px", borderTop: "1px solid #e2e8f0" }}>
+                      <Button
+                        onClick={() => setToggle(false)}
+                        variant="contained"
+                        style={{ backgroundColor: "#f26b38", color: "#fff", textTransform: "none", fontWeight: 600 }}
+                      >
+                        Đóng
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
 
                   <div className={classes.tableWrapper}>
                     <div className="table-responsive">
@@ -755,8 +804,8 @@ export default function Index() {
                           </tr>
                         </thead>
                         <tbody>
-                          {billListChuaTT && billListChuaTT.length > 0 ? (
-                            billListChuaTT.map((bill, i) => (
+                          {billListChuaTT && billListChuaTT.filter(b => b?.status === 'SUCCESS').length > 0 ? (
+                            billListChuaTT.filter(b => b?.status === 'SUCCESS').map((bill, i) => (
                               <tr key={bill?.id || i}>
                                 <td>{i + 1}</td>
                                 <td>
@@ -766,15 +815,7 @@ export default function Index() {
                                   >
                                     Xem chi tiết
                                   </button>
-                                  {bill?.status === "WAITING_PAYMENT" && (
-                                    <a
-                                      className="btn btn-sm btn-warning"
-                                      href={`/payment/${bill?.id}/${bill.price}`}
-                                      role="button"
-                                    >
-                                      Thanh toán
-                                    </a>
-                                  )}
+
                                 </td>
                                 <td><strong>#{bill?.id}</strong></td>
                                 <td>
@@ -782,7 +823,7 @@ export default function Index() {
                                   {new Date(bill?.createdTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                                 </td>
                                 <td>
-                                  {bill?.status === "WAITING_PAYMENT" && <span className="badge badge-warning">Chờ thanh toán</span>}
+                                  {bill?.status === "WAITING_PAYMENT" && <span className="badge badge-secondary">Chưa hoàn tất</span>}
                                   {bill?.status === "SUCCESS" && <span className="badge badge-success">Đã thanh toán</span>}
                                   {bill?.status === "EXPIRATION" && <span className="badge badge-danger">Hết hạn</span>}
                                 </td>

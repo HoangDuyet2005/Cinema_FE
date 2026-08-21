@@ -1,17 +1,24 @@
-﻿@import "../connect";
+@import "../connect";
 
 .review-detail-page-wrapper {
   background-color: #ffffff;
-  padding: 24px 0 50px 0;
+  padding: 16px 0 50px 0;
   min-height: 100vh;
   color: #333333;
   width: 100%;
 
+  .galaxy-section-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+    box-sizing: border-box;
+  }
+
   // Breadcrumb
   .review-breadcrumb {
-    font-size: 13.5px;
+    font-size: 13px;
     color: #777777;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -28,14 +35,15 @@
     }
 
     .breadcrumb-separator {
-      color: #aaa;
+      color: #999999;
+      font-size: 12px;
     }
 
     .breadcrumb-current {
-      color: #333333;
-      font-weight: 500;
+      color: #222222;
+      font-weight: 600;
       display: inline-block;
-      max-width: 600px;
+      max-width: 700px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -44,44 +52,53 @@
 
   // Layout Grid
   .review-detail-layout {
+    display: flex;
     align-items: flex-start;
+    justify-content: space-between;
+    gap: 30px;
+    margin: 0 !important;
   }
 
   // --- Left Column ---
   .review-main-col {
+    flex: 1 1 0;
+    max-width: calc(100% - 350px);
+    padding: 0 !important;
+
     .article-main-title {
-      font-size: 26px;
+      font-size: 23px;
       font-weight: 700;
       color: #1a1a1a;
       line-height: 1.35;
-      margin: 0 0 16px 0;
+      margin: 0 0 12px 0;
     }
 
-    // Social Bar (Thumbs-Up Like, Save, View)
+    // Social Bar (Thích 0, Chia sẻ, Lượt xem)
     .article-social-bar {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 8px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
 
       .btn-facebook-like {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         background-color: #1877f2;
         color: #ffffff;
         border: none;
         outline: none;
-        padding: 6px 14px;
-        border-radius: 4px;
-        font-size: 13px;
+        padding: 2px 8px;
+        height: 24px;
+        border-radius: 3px;
+        font-size: 11.5px;
         font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.2s ease, transform 0.1s ease;
+        transition: background-color 0.2s ease;
 
         .btn-icon {
-          font-size: 16px;
+          font-size: 13px;
         }
 
         &:hover {
@@ -90,155 +107,131 @@
 
         &.active {
           background-color: #0d5cb6;
-          box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
       }
 
       .btn-facebook-share {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        background-color: #4267b2;
+        gap: 4px;
+        background-color: #1877f2;
         color: #ffffff;
         border: none;
         outline: none;
-        padding: 6px 14px;
-        border-radius: 4px;
-        font-size: 13px;
+        padding: 2px 8px;
+        height: 24px;
+        border-radius: 3px;
+        font-size: 11.5px;
         font-weight: 600;
         cursor: pointer;
+        transition: background-color 0.2s ease;
 
         .btn-icon {
-          font-size: 16px;
+          font-size: 13px;
         }
 
         &:hover {
-          background-color: #365899;
-        }
-      }
-
-      .btn-save-article {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        background-color: #f0f2f5;
-        color: #333333;
-        border: 1px solid #dcdcdc;
-        outline: none;
-        padding: 5px 12px;
-        border-radius: 4px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-
-        .btn-icon {
-          font-size: 18px;
-          color: #555;
-        }
-
-        &:hover {
-          background-color: #e4e6eb;
-        }
-
-        &.saved {
-          background-color: #fff3e0;
-          border-color: #e87722;
-          color: #e87722;
-
-          .btn-icon {
-            color: #e87722;
-          }
+          background-color: #166fe5;
         }
       }
 
       .badge-view-count {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        background-color: #f8f9fa;
-        color: #65676b;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 13px;
+        gap: 4px;
+        background-color: #f0f2f5;
+        color: #606770;
+        border: 1px solid #dadde1;
+        padding: 2px 8px;
+        height: 24px;
+        border-radius: 3px;
+        font-size: 11.5px;
         font-weight: 500;
-        border: 1px solid #eeeeee;
+        box-sizing: border-box;
 
         .btn-icon {
-          font-size: 16px;
-          color: #65676b;
+          font-size: 13px;
+          color: #606770;
         }
       }
     }
 
     // Lead text
     .article-lead-text {
-      font-size: 16px;
+      font-size: 14.5px;
       line-height: 1.65;
       color: #333333;
-      margin-bottom: 20px;
-      font-weight: 500;
-      background-color: #f9f9f9;
-      padding: 14px 18px;
-      border-left: 4px solid #034ea2;
-      border-radius: 0 6px 6px 0;
-    }
-
-    // Rich body
-    .article-rich-body {
-      font-size: 15.5px;
-      line-height: 1.75;
-      color: #2c2c2c;
-      margin-bottom: 40px;
+      margin-bottom: 12px;
 
       p {
-        margin-bottom: 16px;
+        margin-bottom: 10px;
+      }
+    }
+
+    // Rich body text
+    .article-rich-body {
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: #333333;
+
+      p {
+        margin-bottom: 14px;
       }
 
       img {
         max-width: 100%;
         height: auto;
-        border-radius: 8px;
-        margin: 18px 0;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        border-radius: 4px;
+        margin: 12px 0;
+        display: block;
       }
 
-      a {
-        color: #034ea2;
-        text-decoration: none;
-        &:hover {
-          text-decoration: underline;
-        }
-      }
-
-      strong, b {
+      h2, h3, h4 {
+        color: #1a1a1a;
+        margin: 20px 0 10px 0;
         font-weight: 700;
-        color: #111;
       }
     }
 
-    // --- Comments Section ---
+    // Comments Section
     .article-comments-section {
-      margin-top: 40px;
+      margin-top: 36px;
       padding-top: 24px;
       border-top: 1px solid #eeeeee;
 
+      .galaxy-section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+
+        .galaxy-title-bar {
+          width: 3px;
+          height: 18px;
+          background-color: #034ea2;
+          margin-right: 8px;
+          display: inline-block;
+        }
+
+        .galaxy-title-text {
+          font-size: 15px;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin: 0;
+          letter-spacing: 0.5px;
+        }
+      }
+
       .add-comment-box {
-        margin-bottom: 24px;
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 14px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
 
         .comment-textarea {
           width: 100%;
-          border: 1px solid #eeeeee;
-          border-radius: 6px;
+          border: 1px solid #dcdfe6;
+          border-radius: 4px;
           padding: 10px 14px;
-          font-size: 14px;
+          font-size: 13.5px;
           font-family: inherit;
-          color: #222222;
+          color: #333333;
           outline: none;
           resize: vertical;
           box-sizing: border-box;
@@ -251,7 +244,7 @@
         .comment-submit-row {
           display: flex;
           justify-content: flex-end;
-          margin-top: 10px;
+          margin-top: 8px;
 
           .btn-submit-comment {
             display: inline-flex;
@@ -259,9 +252,9 @@
             background-color: #e87722;
             color: #ffffff;
             border: none;
-            padding: 8px 18px;
-            border-radius: 6px;
-            font-size: 14px;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
             transition: background-color 0.2s ease;
@@ -281,20 +274,20 @@
       .comments-list-box {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 12px;
 
         .comment-item-card {
           display: flex;
           align-items: flex-start;
-          gap: 12px;
+          gap: 10px;
           background-color: #f9f9f9;
-          padding: 12px 16px;
-          border-radius: 8px;
+          padding: 10px 14px;
+          border-radius: 6px;
           position: relative;
 
           .comment-user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
@@ -312,25 +305,25 @@
             .comment-header-row {
               display: flex;
               align-items: center;
-              gap: 10px;
-              margin-bottom: 4px;
+              gap: 8px;
+              margin-bottom: 2px;
 
               .user-name {
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: 700;
                 color: #222222;
               }
 
               .comment-time {
-                font-size: 12px;
+                font-size: 11.5px;
                 color: #888888;
               }
             }
 
             .comment-text {
-              font-size: 14px;
+              font-size: 13px;
               color: #444444;
-              line-height: 1.45;
+              line-height: 1.4;
               margin: 0;
             }
           }
@@ -342,7 +335,6 @@
             cursor: pointer;
             padding: 4px;
             opacity: 0.7;
-            transition: opacity 0.2s ease;
 
             &:hover {
               opacity: 1;
@@ -352,18 +344,40 @@
 
         .no-comments-text {
           color: #888888;
-          font-size: 14px;
+          font-size: 13px;
           text-align: center;
-          padding: 20px 0;
+          padding: 16px 0;
         }
       }
     }
 
     // Related Reviews
     .related-reviews-section {
-      margin-top: 40px;
-      padding-top: 30px;
+      margin-top: 32px;
+      padding-top: 24px;
       border-top: 1px solid #eeeeee;
+
+      .galaxy-section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+
+        .galaxy-title-bar {
+          width: 3px;
+          height: 18px;
+          background-color: #034ea2;
+          margin-right: 8px;
+          display: inline-block;
+        }
+
+        .galaxy-title-text {
+          font-size: 15px;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin: 0;
+          letter-spacing: 0.5px;
+        }
+      }
 
       .other-review-card {
         display: block;
@@ -372,37 +386,35 @@
 
         .other-review-img-box {
           width: 100%;
-          height: 110px;
-          border-radius: 6px;
+          height: 100px;
+          border-radius: 4px;
           overflow: hidden;
           background-color: #f0f0f0;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 
           .other-review-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.35s ease;
+            transition: transform 0.3s ease;
           }
         }
 
         .other-review-title {
-          font-size: 13.5px;
+          font-size: 13px;
           font-weight: 600;
           color: #222;
-          line-height: 1.4;
-          margin-top: 8px;
+          line-height: 1.35;
+          margin-top: 6px;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
-          transition: color 0.2s ease;
         }
 
         &:hover {
           text-decoration: none;
           .other-review-img {
-            transform: translateY(-4px) scale(1.03);
+            transform: scale(1.03);
           }
           .other-review-title {
             color: #034ea2;
@@ -414,83 +426,40 @@
 
   // --- Right Sidebar ---
   .review-sidebar-col {
-    position: sticky;
-    top: 90px;
+    flex: 0 0 320px;
+    max-width: 320px;
+    width: 320px;
+    padding: 0 !important;
 
-    // Widget 1: Mua Vé Nhanh
-    .sidebar-quick-book-widget {
-      margin-bottom: 30px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-      border-radius: 6px;
-      overflow: hidden;
+    // Widget 2: Phim Đang Chiếu
+    .sidebar-now-showing-widget {
+      .galaxy-section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 14px;
 
-      .quick-book-header {
-        background-color: #034ea2;
-        padding: 12px 16px;
-        text-align: center;
+        .galaxy-title-bar {
+          width: 3px;
+          height: 18px;
+          background-color: #034ea2;
+          margin-right: 8px;
+          display: inline-block;
+        }
 
-        h3 {
-          color: #ffffff;
-          font-size: 17px;
+        .galaxy-title-text {
+          font-size: 15px;
           font-weight: 700;
+          color: #1a1a1a;
           margin: 0;
           letter-spacing: 0.5px;
         }
       }
 
-      .quick-book-body {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-top: none;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-
-        .quick-select-input {
-          width: 100%;
-          padding: 10px 12px;
-          border: 1px solid #d9d9d9;
-          border-radius: 4px;
-          font-size: 14px;
-          color: #555555;
-          background-color: #fafafa;
-          outline: none;
-          cursor: pointer;
-          transition: border-color 0.2s ease;
-
-          &:focus {
-            border-color: #034ea2;
-            background-color: #ffffff;
-          }
-        }
-
-        .quick-book-submit-btn {
-          width: 100%;
-          background-color: #e87722;
-          color: #ffffff;
-          border: none;
-          padding: 10px;
-          border-radius: 4px;
-          font-size: 15px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-
-          &:hover {
-            background-color: #d16413;
-          }
-        }
-      }
-    }
-
-    // Widget 2: Phim Đang Chiếu
-    .sidebar-now-showing-widget {
       .sidebar-movies-list {
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        margin-bottom: 20px;
+        gap: 16px;
+        margin-bottom: 16px;
 
         .sidebar-movie-item {
           display: block;
@@ -500,65 +469,64 @@
           .sidebar-movie-poster-box {
             position: relative;
             width: 100%;
-            height: 260px;
-            border-radius: 8px;
+            height: 200px;
+            border-radius: 4px;
             overflow: hidden;
             background-color: #f0f0f0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 
             .sidebar-movie-poster {
               width: 100%;
               height: 100%;
               object-fit: cover;
-              transition: transform 0.35s ease;
+              transition: transform 0.3s ease;
             }
 
             .sidebar-badge-rating {
               position: absolute;
-              bottom: 10px;
-              right: 10px;
+              bottom: 8px;
+              right: 8px;
               background-color: rgba(0, 0, 0, 0.75);
               color: #ffffff;
               display: flex;
               align-items: center;
               gap: 3px;
               padding: 2px 6px;
-              border-radius: 4px;
-              font-size: 13px;
+              border-radius: 3px;
+              font-size: 11.5px;
               font-weight: 700;
 
               .star-icon {
-                font-size: 15px;
+                font-size: 13px;
                 color: #ffb800;
               }
             }
 
             .sidebar-badge-age {
               position: absolute;
-              bottom: 10px;
-              right: 70px;
+              bottom: 8px;
+              right: 62px;
               background-color: #e87722;
               color: #ffffff;
-              font-size: 12px;
+              font-size: 11px;
               font-weight: 700;
-              padding: 2px 6px;
-              border-radius: 4px;
+              padding: 2px 5px;
+              border-radius: 3px;
             }
           }
 
           .sidebar-movie-name {
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             color: #222222;
-            margin: 10px 0 0 0;
-            line-height: 1.4;
+            margin: 8px 0 0 0;
+            line-height: 1.35;
             transition: color 0.2s ease;
           }
 
           &:hover {
             text-decoration: none;
             .sidebar-movie-poster {
-              transform: translateY(-4px) scale(1.02);
+              transform: scale(1.02);
             }
             .sidebar-movie-name {
               color: #034ea2;
@@ -570,7 +538,12 @@
       .sidebar-see-more-box {
         display: flex;
         justify-content: center;
-        margin-top: 10px;
+        margin-top: 8px;
+
+        .btn-xem-them-global {
+          font-size: 13px;
+          padding: 6px 20px;
+        }
       }
     }
   }
@@ -579,13 +552,17 @@
 // Responsive
 @media (max-width: 991px) {
   .review-detail-page-wrapper {
+    .review-detail-layout {
+      flex-direction: column;
+      gap: 30px;
+    }
     .review-main-col {
-      padding: 0 !important;
-      margin-bottom: 40px;
+      max-width: 100%;
+      width: 100%;
     }
     .review-sidebar-col {
-      padding: 0 !important;
-      position: static;
+      max-width: 100%;
+      width: 100%;
     }
   }
 }

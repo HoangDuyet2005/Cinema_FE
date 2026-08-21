@@ -42,12 +42,7 @@ const reviewsApi = {
     return axiosClient.get(path);
   },
 
-  // getListBillChuThanhToan: () => {
-  //   const path = `/bills/getUserDashBoard?status=WAITING_PAYMENT`;
-  //   return axiosClient.get(path);
-  // },
-
-    getListBillCuaStaff: () => {
+  getListBillCuaStaff: () => {
     const path = `/bills/getAllBill`;
     return axiosClient.get(path);
   },
@@ -72,11 +67,6 @@ const reviewsApi = {
     const path = "/";
     return axiosClient.post(path, event);
   },
-
-  // postAddReview: (review) => {
-  //   const path = "/";
-  //   return axiosClient.post(path, review);
-  // },
 
   getThongTinCuaBill: (billId) => {
     const path = `/bills/${billId}`;
@@ -113,7 +103,15 @@ const reviewsApi = {
     return axiosClient.get(path);
   },
 
+  checkTicket: (code) => {
+    const path = `/bills/check-ticket?code=${encodeURIComponent(code)}`;
+    return axiosClient.get(path);
+  },
 
+  confirmCheckIn: (billId) => {
+    const path = `/bills/check-in?billId=${billId}`;
+    return axiosClient.post(path);
+  },
 };
 
 export default reviewsApi;

@@ -2,7 +2,6 @@ import { makeStyles } from "@material-ui/core"
 
 const useStyles = makeStyles(theme => ({
   desktop: {
-    // color: "#e9e9e9",
     backgroundColor: "rgb(10, 32, 41)",
   },
   top: {
@@ -43,7 +42,6 @@ const useStyles = makeStyles(theme => ({
     alignItems: "center",
     justifyContent: "center",
     color: "#e9e9e9",
-
   },
   imgTrailer: {
     width: "25%",
@@ -58,7 +56,6 @@ const useStyles = makeStyles(theme => ({
   img: {
     width: "100%",
     borderRadius: 4,
-
   },
   shortInfo: {
     width: "59%",
@@ -66,6 +63,8 @@ const useStyles = makeStyles(theme => ({
   },
   movieName: {
     fontSize: 24,
+    fontWeight: "bold",
+    margin: "6px 0",
   },
   c18: {
     marginRight: "6px",
@@ -76,8 +75,36 @@ const useStyles = makeStyles(theme => ({
     borderRadius: "4px",
     padding: "0 5px",
     display: "inline-block",
-    // textAlign: "center",
     minWidth: "33px"
+  },
+  ratingTrigger: {
+    display: "inline-flex",
+    alignItems: "center",
+    cursor: "pointer",
+    margin: "4px 0 8px 0",
+    padding: "2px 0",
+    background: "none",
+    border: "none",
+    transition: "transform 0.15s ease",
+    "&:hover": {
+      transform: "scale(1.03)",
+    },
+  },
+  starIcon: {
+    color: "#f58020",
+    fontSize: "22px",
+    marginRight: "4px",
+  },
+  ratingScore: {
+    color: "#f58020",
+    fontSize: "18px",
+    fontWeight: "700",
+    marginRight: "5px",
+  },
+  ratingVotes: {
+    color: "#718096",
+    fontSize: "14px",
+    fontWeight: "400",
   },
   btnMuaVe: {
     fontSize: "16px",
@@ -85,56 +112,16 @@ const useStyles = makeStyles(theme => ({
     background: "0 0",
     padding: "11px 25px",
     transition: "all .2s",
-    marginTop: "25px",
-    marginBottom: "20px",
+    marginTop: "12px",
+    marginBottom: "10px",
     backgroundColor: "#fb4226",
     border: "none",
     color: "#fff",
+    cursor: "pointer",
     "&:hover": {
       backgroundColor: "#b42a14",
     }
   },
-
-  rate: {
-    width: "16%",
-    height: "100%",
-    textAlign: "center",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  circular: {
-    position: 'relative',
-    height: 126,
-    width: 126,
-  },
-  danhGia: {
-    fontSize: 53,
-    position: 'absolute',
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%,-50%)",
-  },
-  fabProgress: {
-    color: "#7ed321",
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  behined: {
-    color: "#829869",
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  rateStar: {
-    width: "fit-content",
-    '& .MuiRating-iconEmpty': {
-      color: "rgba(255, 180, 0, 0.3)",
-    }
-  },
-
   withOutImage: {
     borderRadius: 4,
     width: "100%", height: "100%",
@@ -150,6 +137,5 @@ const useStyles = makeStyles(theme => ({
     "50%": { backgroundPosition: "100% 50%" },
     "100%": { backgroundPosition: "0% 50%" },
   },
-
 }))
 export default useStyles

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./NewsComponent.scss";
 import { NavLink, useHistory } from "react-router-dom";
 import { qLyPhimService } from "../../services/QuanLyPhimServices";
@@ -26,7 +26,6 @@ export default function NewsComponent() {
   const handlerSeeMore = () => {
     history.push("/review");
   };
-
   const rawList = danhSachTinTuc?.data?.content || danhSachTinTuc?.data || [];
   const approvedReviews = rawList.filter(
     (item) => item?.type === "REVIEWS" && item?.status === "APPROVE"
@@ -46,7 +45,7 @@ export default function NewsComponent() {
     <div className="featured-articles-wrapper" id="nhung-bai-viet-noi-bat">
       <div className="galaxy-section-container">
         {/* Section Header: | GÓC ĐIỆN ẢNH */}
-        <div className="galaxy-section-header">
+        <div className="galaxy-section-header-clean">
           <span className="galaxy-title-bar"></span>
           <h2 className="galaxy-title-text">GÓC ĐIỆN ẢNH</h2>
         </div>
@@ -127,8 +126,9 @@ export default function NewsComponent() {
           </div>
         )}
 
+
         {/* See More Button */}
-        <div className="featured-articles-footer">
+        <div className="featured-articles-footer" style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
           <button
             className="btn-xem-them-global"
             type="button"

@@ -1,28 +1,56 @@
 import React, { useEffect, useState } from 'react'
-
-import { useParams } from "react-router-dom";
-import Rating from '@material-ui/lab/Rating';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import { useLocation } from "react-router-dom";
-
+import { useParams, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import StarIcon from '@material-ui/icons/Star';
 import useStyles from './style';
 import formatDate from '../../../utilities/formatDate';
-import useApiThoiLuongDanhGia from '../../../utilities/useApiThoiLuongDanhGia';
 import Tap from '../Tap';
 import BtnPlay from '../../../components/BtnPlay';
-import { dataFakeImgTheater } from '../../../constants/theaterData';
-import ShowtimeDetail  from "../../UserProfile/ShowtimeDetail/index"
-import Showtime from "./../../../pages/Homepage/Showtime";
+import MovieRatingModal from '../../../components/MovieRatingModal';
+import moviesApi from '../../../api/moviesApi';
 
 export default function Desktop({ movieDetailShowtimes: data, isMobile }) {
-  // console.log("----------MT---------",data);
   const [onClickBtnMuave, setOnClickBtnMuave] = useState(0)
   const param = useParams()
   const [quantityComment, setQuantityComment] = useState(0)
-  const { danhGia } = useApiThoiLuongDanhGia(param.maPhim)
   const classes = useStyles({ bannerImg: data?.smallImageURl })
   const [imageNotFound, setImageNotFound] = useState(false)
+  const [openRatingModal, setOpenRatingModal] = useState(false)
+  const [ratingData, setRatingData] = useState({
+    avgRating: 0.0,
+    totalVotes: 0,
+    userRating: null,
+  })
+
+  const auth = useSelector((state) => state.authReducer);
+  const usersMgmt = useSelector((state) => state.usersManagementReducer);
+  const currentUser =
+    auth?.currentUser ||
+    usersMgmt?.successInfoUser?.data ||
+    (localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null) ||
+    (localStorage.getItem("userInfo") ? JSON.parse(localStorage.getItem("userInfo")) : null);
+
+  const userId = currentUser?.id || currentUser?.data?.id;
   let location = useLocation();
+
+  const movieId = data?.id || param?.maPhim;
+
+  useEffect(() => {
+    if (movieId) {
+      moviesApi
+        .getMovieRating(movieId, userId)
+        .then((res) => {
+          if (res.data?.data) {
+            setRatingData(res.data.data);
+          }
+        })
+        .catch((err) => console.log("Error loading movie rating:", err));
+    }
+  }, [movieId, userId]);
+
+  const handleRatingUpdated = (newRatingData) => {
+    setRatingData(newRatingData);
+  };
 
   const handleBtnMuaVe = () => {
     setOnClickBtnMuave(Date.now())
@@ -42,7 +70,6 @@ export default function Desktop({ movieDetailShowtimes: data, isMobile }) {
         <div className={classes.topInfo}>
           <div className={classes.imgTrailer}>
             <BtnPlay urlYoutube={(data?.trailerURL)} />
-            {/* xử lý khi url hình bị lỗi */}
             <img src={data?.smallImageURl} alt="poster" style={{ display: "none" }} onError={(e) => { e.target.onerror = null; setImageNotFound(true) }} />
             {imageNotFound && <div className={classes.withOutImage}></div>}
           </div>
@@ -50,28 +77,46 @@ export default function Desktop({ movieDetailShowtimes: data, isMobile }) {
             <p>Ngày khởi chiếu:{" "}{formatDate(data?.releaseDate?.slice(0, 10)).dateFull}</p>
             <p><span className={classes.c18}>{data?.rated}</span></p>
             <p className={classes.movieName}>{data?.name}</p>
-            {/* <p>{`${thoiLuong ?? "120"} phút - ${danhGia}`} - 2D/Digital</p> */}
             <p>
               Thời lượng: {data?.duration} phút
             </p>
-            <button className={classes.btnMuaVe} onClick={handleBtnMuaVe}>{location?.state?.comingMovie ? "Thông tin phim" : "Mua vé"}</button>
+
+            {/* Phần đánh giá sao theo đúng ảnh mẫu Image 2 */}
+            <div>
+              <div
+                className={classes.ratingTrigger}
+                onClick={() => setOpenRatingModal(true)}
+                title="Bấm vào đây để đánh giá phim"
+              >
+                <StarIcon className={classes.starIcon} />
+                <span className={classes.ratingScore}>
+                  {ratingData.totalVotes > 0 ? Number(ratingData.avgRating).toFixed(1) : "0"}
+                </span>
+                <span className={classes.ratingVotes}>
+                  ({ratingData.totalVotes || 0} votes)
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <button className={classes.btnMuaVe} onClick={handleBtnMuaVe}>
+                {location?.state?.comingMovie ? "Thông tin phim" : "Mua vé"}
+              </button>
+            </div>
           </div>
-          {/* <div className={classes.rate}>
-            <div className={classes.circular}>
-              <span className={classes.danhGia}>{danhGia}</span>
-              <CircularProgress variant="determinate" size="100%" value={100} className={classes.behined} color="secondary" />
-              <CircularProgress variant="determinate" size="100%" value={danhGia * 10} className={classes.fabProgress} color="secondary" />
-            </div>
-            <div className={classes.rateStar}>
-              <Rating value={(danhGia * 5) / 10} precision={0.5} readOnly />
-            </div>
-            <span>{quantityComment} người đánh giá</span>
-          </div> */}
         </div>
       </div>
       <Tap data={data} onClickBtnMuave={onClickBtnMuave} onIncreaseQuantityComment={onIncreaseQuantityComment} isMobile={isMobile} />
-      {/* <ShowtimeDetail /> */}
-      {/* <Showtime /> */}
+
+      {/* Modal đánh giá sao theo đúng Image 3 & Image 4 */}
+      <MovieRatingModal
+        open={openRatingModal}
+        onClose={() => setOpenRatingModal(false)}
+        movie={data}
+        ratingData={ratingData}
+        onRatingUpdated={handleRatingUpdated}
+        currentUser={currentUser}
+      />
     </div>
   )
 }

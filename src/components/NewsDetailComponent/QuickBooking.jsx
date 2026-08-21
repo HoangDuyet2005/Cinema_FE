@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect } from "react";
+import moviesApi from "../../api/moviesApi";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useHistory } from "react-router-dom";
 import theatersApi from "../../api/theatersApi";
@@ -35,18 +36,23 @@ export default function QuickBooking() {
     return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
   };
 
-  // Load movies list if not available in Redux
+  // Load movies list
   useEffect(() => {
-    if (!movieList || !movieList.data || movieList.data.length === 0) {
+    const list = Array.isArray(movieList)
+      ? movieList
+      : (movieList?.data?.content || movieList?.data || []);
+    if (list && list.length > 0) {
+      setMovies(list);
+    } else {
       dispatch(getMovieList());
+      moviesApi.getDanhSachPhim().then((res) => {
+        const raw = res.data?.data?.content || res.data?.data || res.data || [];
+        if (Array.isArray(raw) && raw.length > 0) {
+          setMovies(raw);
+        }
+      }).catch((err) => console.log(err));
     }
   }, [dispatch, movieList]);
-
-  useEffect(() => {
-    if (movieList?.data) {
-      setMovies(movieList.data);
-    }
-  }, [movieList]);
 
   // Format date helper: "thứ năm, 20/08/2026"
   const formatVietnameseDate = (dateStr) => {

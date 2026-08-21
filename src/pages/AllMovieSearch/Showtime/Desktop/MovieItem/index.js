@@ -35,7 +35,7 @@ function MovieItem({ movie, comingMovie }) {
             </p>
           </div>
           <div className={`film__button`}>
-            {(thoiLuong || comingMovie) && <Link style={{ background: comingMovie ? "#60c5ef" : "#fb4226", }} to={{ pathname: `/phim/${movie.id}`, state: { comingMovie } }}>{comingMovie ? "INFOMATION" : "BOOK NOW!"}</Link>}
+            {(thoiLuong || comingMovie) && <Link style={{ background: comingMovie ? "#60c5ef" : "#f26b38", }} to={{ pathname: `/phim/${movie.id}`, state: { comingMovie } }}>{comingMovie ? "INFOMATION" : "BOOK NOW!"}</Link>}
           </div>
         </div>
       </div>

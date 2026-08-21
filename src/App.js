@@ -1,13 +1,13 @@
-﻿import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { BrowserRouter, Switch, Route } from "react-router-dom";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 
 import ModalTrailer from "./components/ModalTrailer";
+import AIChatBot from "./components/AIChatBot";
 import TriggerLoadingLazy from "./components/TriggerLoadingLazy";
 import Loading from "./components/Loading";
 import { theme } from "./constants/config";
-import PaymentUser from "./pages/PaymentUser";
 import usersApi from "./api/usersApi";
 import { LOGIN_SUCCESS, LOGOUT } from "./reducers/constants/Auth";
 import { GET_INFO_USER_SUCCESS } from "./reducers/constants/UsersManagement";
@@ -27,11 +27,11 @@ const UserProfileRoute = lazy(() => import("./guards/UserProfileRoute"));
 // page
 const Homepage = lazy(() => import("./pages/Homepage"));
 const AllMovieSearch = lazy(() => import("./pages/AllMovieSearch"));
-const ReviewAll = lazy(() => import("./pages/ReviewAll"));
 const EventAll = lazy(() => import("./pages/EventAll"));
 const BookAll = lazy(() => import("./pages/BookAll"));
 const BookAllFix = lazy(() => import("./pages/BookAllFix"));
 const MovieDetail = lazy(() => import("./pages/MovieDetail"));
+const ReviewAll = lazy(() => import("./pages/ReviewAll"));
 const ReviewerDetail = lazy(() => import("./pages/ReviewerDetail"));
 const ReviewMovie = lazy(() => import("./pages/ReviewMovie"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
@@ -57,6 +57,8 @@ const DetailNews = lazy(() => import("./pages/DetailNews"));
 const NewsDetail = lazy(() => import("./pages/NewsDetail"));
 const DetailReview = lazy(() => import("./pages/DetailReview"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const PaymentResult = lazy(() => import("./pages/PaymentResult"));
+const StaffCheckTicket = lazy(() => import("./pages/StaffCheckTicket"));
 
 function AuthInitializer() {
   const dispatch = useDispatch();
@@ -113,12 +115,12 @@ function App() {
         <Loading />
         {/* Modal */}
         <ModalTrailer />
+        <AIChatBot />
         <Suspense fallback={<TriggerLoadingLazy />}> 
           <Switch>
-            <Route exact path={["/reviewer/:maPhim" ,"/search/:search", "/", "/phim/:maPhim", "/taikhoan", "/review/:maTin", "/schedule", "/review", "/bookall", "/event-all", "/phim/:maPhim/write-review", "/detail-review/:maTin", "payment/:maBill/total", "/detail-news/:maTin"]}>
+            <Route exact path={["/reviewer/:maPhim" ,"/search/:search", "/", "/phim/:maPhim", "/taikhoan", "/review", "/review/:maTin", "/schedule", "/bookall", "/event-all", "/phim/:maPhim/write-review", "/detail-review/:maTin", "/detail-news/:maTin", "/payment-result"]}>
               <MainLayout>
                 <Route exact path="/" component={Homepage} />
-                <Route exact path="/review" component={ReviewAll} />
                 <Route exact path="/event-all" component={EventAll} />
                 <Route exact path="/search/:searchItem" component={AllMovieSearch} />
                 <Route exact path="/schedule" component={BookAll} />
@@ -126,9 +128,11 @@ function App() {
                 <Route exact path="/phim/:maPhim" component={MovieDetail} />
                 <Route exact path="/reviewer/:maPhim" component={ReviewerDetail} />
                 <Route exact path="/phim/:maPhim/write-review" component={ReviewMovie} />
-                <Route exact path="/review/:maTin" component={DetailNews} />
+                <Route exact path="/review" component={ReviewAll} />
+                  <Route exact path="/review/:maTin" component={DetailNews} />
                 <Route exact path="/detail-review/:maTin" component={DetailReview} />
                 <Route exact path="/detail-news/:maTin" component={NewsDetail} />
+                <Route exact path="/payment-result" component={PaymentResult} />
                 <UserProfileRoute
                   exact
                   path="/taikhoan"
@@ -149,21 +153,22 @@ function App() {
               component={BookTicketsDetail}
             />
 
-            <CheckoutRoute
-              exact
-              path="/payment/:maBill/:total"
-              component={PaymentUser}
-            />
+
 
             <Route
               exact
-              path={["/admin/branch","/admin/category", "/admin/bills", "/admin/users", "/admin/movies", "/admin/showtimes", "/admin/reviews", "/admin/ticket", "/admin/events", "/admin/dashboard", "/admin/book/:maLichChieu/:maRap/:maPhim/:ngayChieu/:maPhong/:gioChieu", "/admin/book/"]}
+              path={["/admin/check-ticket", "/admin/branch","/admin/category", "/admin/bills", "/admin/users", "/admin/movies", "/admin/showtimes", "/admin/reviews", "/admin/ticket", "/admin/events", "/admin/dashboard", "/admin/book/:maLichChieu/:maRap/:maPhim/:ngayChieu/:maPhong/:gioChieu", "/admin/book/"]}
             >
               <AdminLayout>
                 <AdminRoute
                   exact
                   path="/admin/dashboard"
                   component={DashBoard}
+                />
+                <AdminRoute
+                  exact
+                  path="/admin/check-ticket"
+                  component={StaffCheckTicket}
                 />
                 <AdminRoute
                   exact
@@ -220,9 +225,14 @@ function App() {
 
             <Route
               exact
-              path={["/staff/branch","/staff/category", "/staff/bills","/staff/movies", "/staff/book", "/staff/reviews", "/staff/book/:maLichChieu/:maRap/:maPhim/:ngayChieu/:maPhong/:gioChieu", "/staff/showtimes", "/staff/ticket", "/staff/events", "/staff/book/"]}
+              path={["/staff/check-ticket", "/staff/branch","/staff/category", "/staff/bills","/staff/movies", "/staff/book", "/staff/reviews", "/staff/book/:maLichChieu/:maRap/:maPhim/:ngayChieu/:maPhong/:gioChieu", "/staff/showtimes", "/staff/ticket", "/staff/events", "/staff/book/"]}
             >
               <StaffLayout>
+                <StaffRoute
+                  exact
+                  path="/staff/check-ticket"
+                  component={StaffCheckTicket}
+                />
                 <StaffRoute
                   exact
                   path="/staff/movies"
@@ -294,6 +304,8 @@ function App() {
                 <Route exact path="/staff" component={LoginStaff} />
               </AuthLayoutStaff>
             </Route>
+
+            <Route exact path="/check-ticket" component={StaffCheckTicket} />
 
             <Route component={NotFound} />
           </Switch>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import clsx from 'clsx';
 import Drawer from '@material-ui/core/Drawer';
@@ -30,9 +30,9 @@ import { getTheaters } from '../../../reducers/actions/Theater';
 import Swal from "sweetalert2";
 
 const headMenu = [
-  { nameLink: 'Tất cả Phim', id: "lichchieu" }, 
-  { nameLink: 'Đặt vé', id: "schedule" }, 
-  { nameLink: 'Bài viết và Sự kiện', id: "tintuc" }, 
+  { nameLink: 'Tất cả Phim', id: "lichchieu" },
+  { nameLink: 'Đặt vé', id: "schedule" },
+  { nameLink: 'Bài viết và Sự kiện', id: "tintuc" },
 ];
 
 export default function Header() {
@@ -95,7 +95,7 @@ export default function Header() {
       },
       buttonsStyling: false
     });
-    
+
     swalWithBootstrapButtons.fire({
       title: 'Đăng xuất!',
       text: "Chắc chắn bạn muốn đăng xuất?",
@@ -174,7 +174,7 @@ export default function Header() {
   return (
     <div className={classes.root}>
       {/* START HEADER */}
-      <AppBar position="fixed" classes={{ root: clsx(classes.appBar, { [classes.appBarShift]: openDrawer }) }} color='default'>
+      <AppBar position="relative" classes={{ root: clsx(classes.appBar, { [classes.appBarShift]: openDrawer }) }} color='default'>
         <Toolbar className={classes.spaceBetween}>
           {/* logo */}
           <div className={classes.logo} onClick={handleClickLogo}>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
@@ -317,12 +317,6 @@ export default function Choose() {
         suatChieuRender,
         lichChieuPhimDataSelected,
       }));
-    });
-      setData((data) => ({
-        ...data,
-        suatChieuRender,
-        lichChieuPhimDataSelected,
-      }));
     })
     .catch((err) => {
       console.log(err);
@@ -402,7 +396,7 @@ export default function Choose() {
             return (
               <TextField
                 {...params}
-                placeholder="Tìm phim..."
+                placeholder="Chọn Phim"
                 InputProps={{ ...params.InputProps, startAdornment: ( <span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 24, minHeight: 24, borderRadius: '50%', backgroundColor: '#e87722', color: 'white', marginRight: 8, fontSize: 14, fontWeight: 'bold'}}>1</span> ) }}
                 variant="standard"
                 className={classes.textField}
@@ -447,7 +441,7 @@ export default function Choose() {
           onOpen={handleOpenRap}
           onChange={handleSelectRap}
           value={data?.setRap} // tenCumRap
-          renderValue={(value) => (<div style={{display: 'flex', alignItems: 'center'}}><span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 24, minHeight: 24, borderRadius: '50%', backgroundColor: '#e87722', color: 'white', marginRight: 8, fontSize: 14, fontWeight: 'bold'}}>2</span>{value ? value : "Chi nhánh rạp"}</div>)} // hiển thị giá trị đã chọn
+          renderValue={(value) => (<div style={{display: 'flex', alignItems: 'center'}}><span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 24, minHeight: 24, borderRadius: '50%', backgroundColor: '#e87722', color: 'white', marginRight: 8, fontSize: 14, fontWeight: 'bold'}}>2</span>{value ? value : "Chọn Rạp"}</div>)} // hiển thị giá trị đã chọn
           displayEmpty
           IconComponent={ExpandMoreIcon}
           MenuProps={menuProps}
@@ -491,7 +485,7 @@ export default function Choose() {
           onOpen={handleOpenNgayXem}
           onChange={handleSelectNgayXem}
           value={data.setNgayXem} // ngayChieu
-          renderValue={(value) => (<div style={{display: 'flex', alignItems: 'center'}}><span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 24, minHeight: 24, borderRadius: '50%', backgroundColor: '#e87722', color: 'white', marginRight: 8, fontSize: 14, fontWeight: 'bold'}}>3</span>{value ? value : "Ngày chiếu"}</div>)}
+          renderValue={(value) => (<div style={{display: 'flex', alignItems: 'center'}}><span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 24, minHeight: 24, borderRadius: '50%', backgroundColor: '#e87722', color: 'white', marginRight: 8, fontSize: 14, fontWeight: 'bold'}}>3</span>{value ? value : "Chọn Ngày"}</div>)}
           displayEmpty
           IconComponent={ExpandMoreIcon}
           MenuProps={menuProps}
@@ -538,7 +532,7 @@ export default function Choose() {
           onOpen={handleOpenSuatChieu}
           onChange={handleSelectSuatChieu}
           value={data.setSuatChieu} // suatChieu
-          renderValue={(value) => (<div style={{display: 'flex', alignItems: 'center'}}><span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 24, minHeight: 24, borderRadius: '50%', backgroundColor: '#e87722', color: 'white', marginRight: 8, fontSize: 14, fontWeight: 'bold'}}>4</span>{value ? value : "Suất chiếu"}</div>)}
+          renderValue={(value) => (<div style={{display: 'flex', alignItems: 'center'}}><span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 24, minHeight: 24, borderRadius: '50%', backgroundColor: '#e87722', color: 'white', marginRight: 8, fontSize: 14, fontWeight: 'bold'}}>4</span>{value ? value : "Chọn Suất"}</div>)}
           displayEmpty
           IconComponent={ExpandMoreIcon}
           MenuProps={menuProps}

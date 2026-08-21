@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 
 import MovieIcon from '@material-ui/icons/Movie';
 import PeopleAltIcon from '@material-ui/icons/PeopleAlt';
@@ -28,6 +28,11 @@ const items = [
     href: '/admin/dashboard',
     icon: PeopleAltIcon,
     title: 'Thống kê'
+  },
+  {
+    href: '/admin/check-ticket',
+    icon: PostAddIcon,
+    title: 'Soát vé & In vé tại quầy'
   },
   {
     href: '/admin/movies',

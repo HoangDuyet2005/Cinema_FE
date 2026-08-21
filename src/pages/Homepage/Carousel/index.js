@@ -1,189 +1,140 @@
-﻿import React, { useEffect } from "react";
-
+import React, { useEffect, useState } from "react";
 import Slider from "react-slick";
 import ArrowBackIosRoundedIcon from "@material-ui/icons/ArrowBackIosRounded";
 import ArrowForwardIosRoundedIcon from "@material-ui/icons/ArrowForwardIosRounded";
 import { useHistory } from "react-router-dom";
 import useMediaQuery from "@material-ui/core/useMediaQuery";
 import { useTheme } from "@material-ui/core/styles";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 import homeCarouselData from "../../../constants/homeCarouselData";
-import SearchStickets from "./SearchTickets";
 import Choose from "./Choose";
+import ChooseByBranch from "./ChooseByBranch";
 import useStyles from "./styles";
 import BtnPlay from "../../../components/BtnPlay";
 import { LOADING_BACKTO_HOME_COMPLETED } from "../../../reducers/constants/Lazy";
 import "./carousel.css";
-import Booking from "./Booking";
-
-import PropTypes from "prop-types";
-import SwipeableViews from "react-swipeable-views";
-// import { useTheme } from "@mui/material/styles";
-import AppBar from "@mui/material/AppBar";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import ChooseByBranch from "./ChooseByBranch";
-import ChooseByDate from "./ChooseByDate";
-
-
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <Typography
-      component="div"
-      role="tabpanel"
-      hidden={value !== index}
-      id={`action-tabpanel-${index}`}
-      aria-labelledby={`action-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </Typography>
-  );
-}
-
-TabPanel.propTypes = {
-  children: PropTypes.node,
-  index: PropTypes.number.isRequired,
-  value: PropTypes.number.isRequired
-};
-
-function a11yProps(index) {
-  return {
-    id: `action-tab-${index}`,
-    "aria-controls": `action-tabpanel-${index}`
-  };
-}
 
 export default function Carousel() {
-  const movieList = useSelector((state) => state.movieReducer.movieList);
-  // console.log("Lấy banner phim nè: ",movieList);
-
   const dispatch = useDispatch();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const history = useHistory();
   const classes = useStyles();
+  const [tabIndex, setTabIndex] = useState(0);
+
   const settings = {
     dots: true,
     infinite: true,
-    // autoplaySpeed: 5000, //speed per sence
-    // autoplay: false,
-    speed: 1000,
-    // swipeToSlide: true,
-    slidesToShow: 3,
+    speed: 700,
+    centerMode: true,
+    centerPadding: "15%",
+    slidesToShow: 1,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 3000,
+    autoplaySpeed: 3500,
     pauseOnHover: true,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />,
-    // dotsClass: "slickdotsbanner",
+    responsive: [
+      {
+        breakpoint: 1200,
+        settings: {
+          centerMode: true,
+          centerPadding: "12%",
+          slidesToShow: 1,
+        },
+      },
+      {
+        breakpoint: 768,
+        settings: {
+          centerMode: true,
+          centerPadding: "8%",
+          slidesToShow: 1,
+        },
+      },
+      {
+        breakpoint: 480,
+        settings: {
+          centerMode: false,
+          centerPadding: "0px",
+          slidesToShow: 1,
+        },
+      },
+    ],
   };
 
   useEffect(() => {
     dispatch({ type: LOADING_BACKTO_HOME_COMPLETED });
-  }, []);
+  }, [dispatch]);
 
   function NextArrow(props) {
     const { onClick } = props;
     return (
-      <ArrowForwardIosRoundedIcon
-        style={{ right: "15px" }}
-        onClick={onClick}
-        className={classes.Arrow}
-      />
+      <div className={`${classes.arrowContainer} ${classes.arrowNext}`} onClick={onClick}>
+        <ArrowForwardIosRoundedIcon className={classes.arrowIcon} />
+      </div>
     );
   }
 
   function PrevArrow(props) {
     const { onClick } = props;
     return (
-      <ArrowBackIosRoundedIcon
-        style={{ left: "15px" }}
-        onClick={onClick}
-        className={classes.Arrow}
-      />
+      <div className={`${classes.arrowContainer} ${classes.arrowPrev}`} onClick={onClick}>
+        <ArrowBackIosRoundedIcon className={classes.arrowIcon} />
+      </div>
     );
   }
-
-  const [value, setValue] = React.useState(0);
-
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
-  };
-
-  const handleChangeIndex = (index) => {
-    setValue(index);
-  };
-
 
   return (
     <div id="carousel" className={classes.carousel}>
       <Slider {...settings}>
-        {movieList?.data?.map((banner) => {
+        {homeCarouselData.map((banner) => {
+          const bannerId = banner.id || banner.maPhim;
+          const bannerImg = banner.largeImageURL || banner.hinhAnh;
+          const bannerTrailer = banner.trailerURL || banner.trailer;
+          const bannerName = banner.name || banner.tenPhim;
+
           return (
-            <div key={banner.id} className={classes.itemSlider}>
-              <img src={banner?.largeImageURL} alt="banner" className={classes.img} />
-              <div
-                className={classes.backgroundLinear}
-                onClick={() => history.push(`/phim/${banner.id}`)}
-              />
-              {isDesktop && (
-                <BtnPlay cssRoot={"play"} urlYoutube={banner.trailerURL} />
-              )}
+            <div key={bannerId} className={classes.slideWrapper}>
+              <div className={classes.itemSlider}>
+                <img src={bannerImg} alt={bannerName} className={classes.img} />
+                <div
+                  className={classes.backgroundLinear}
+                  onClick={() => history.push(`/phim/${bannerId}`)}
+                />
+                {isDesktop && bannerTrailer && (
+                  <BtnPlay cssRoot={"play"} urlYoutube={bannerTrailer} />
+                )}
+              </div>
             </div>
           );
         })}
       </Slider>
-      
-      <Box
-        sx={{
-          // bgcolor: "background.paper",
-          width: "71%",
-          height: "100%",
-          position: "relative",
-          // left:"13%",
-          textAlign: "center",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, 0%)"
-        }}
-      >
-        <AppBar position="relative" color="default">
-          <Tabs
-            value={value}
-            onChange={handleChange}
-            classes={{ indicator: classes.indicator }}
-            textColor="primariry"
-            variant="fullWidth"
-            aria-label="action tabs example"
-          >
-            <Tab label="Đặt vé theo phim" {...a11yProps(0)} />
-            <Tab label="Đặt vé theo rạp" {...a11yProps(1)} />
-            
-          </Tabs>
-        </AppBar>
-        <SwipeableViews
-          axis={theme.direction === "rtl" ? "x-reverse" : "x"}
-          index={value}
-          onChangeIndex={handleChangeIndex}
-        >
-          <TabPanel value={value} index={0} >
-            <Choose />
-          </TabPanel>
-          <TabPanel value={value} index={1} >
-            <ChooseByBranch />
-          </TabPanel>
-          
-        </SwipeableViews>
-      </Box>
 
-      {/* <Choose/> */}
+      {/* Khung Đặt Vé Nhanh với 2 Tab (Đặt vé theo phim / Đặt vé theo rạp) */}
+      <div className={classes.bookingWrapper}>
+        <div className={classes.tabsHeader}>
+          <button
+            type="button"
+            className={`${classes.tabBtn} ${tabIndex === 0 ? classes.tabBtnActive : ""}`}
+            onClick={() => setTabIndex(0)}
+          >
+            Đặt vé theo phim
+          </button>
+          <button
+            type="button"
+            className={`${classes.tabBtn} ${tabIndex === 1 ? classes.tabBtnActive : ""}`}
+            onClick={() => setTabIndex(1)}
+          >
+            Đặt vé theo rạp
+          </button>
+        </div>
+
+        <div className={classes.tabContent}>
+          {tabIndex === 0 ? <Choose /> : <ChooseByBranch />}
+        </div>
+      </div>
     </div>
   );
 }

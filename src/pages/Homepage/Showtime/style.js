@@ -1,4 +1,4 @@
-﻿import { makeStyles } from "@material-ui/core"
+import { makeStyles } from "@material-ui/core"
 
 const useStyles = makeStyles(theme => ({
   rootShowtime: {
@@ -6,17 +6,12 @@ const useStyles = makeStyles(theme => ({
     width: "100%",
   },
 
-  Arrow: {
-    position: "absolute",
-    top: "48%",
-    transform: "translateY(-50%)",
-    zIndex: 2,
-    width: "50px",
-    height: "100px",
-    color: "#d8d8d8 !important",
-    cursor: "pointer",
-    transition: "all .2s",
-    "&:hover": { color: "#e87722 !important" },
+  headerContainer: {
+    width: "100%",
+    maxWidth: 1200,
+    margin: "0 auto",
+    padding: "0 20px",
+    boxSizing: "border-box",
   },
 
   listMovie: {

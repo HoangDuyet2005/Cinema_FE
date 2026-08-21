@@ -1,3 +1,4 @@
+import billsApi from "../../../api/billsApi";
 import React from "react";
 
 import { useParams } from "react-router-dom";
@@ -15,6 +16,7 @@ import { LOADING_BACKTO_HOME } from "../../../reducers/constants/Lazy";
 import { getListSeat } from "../../../reducers/actions/BookTicket";
 import { colorTheater } from "../../../constants/theaterData";
 import ResultBookticket from "../ResultBookticket";
+import bookingApi from "../../../api/bookingApi";
 
 export default function Modal() {
   const {

@@ -1,4 +1,4 @@
-﻿import Swal from 'sweetalert2';
+import Swal from 'sweetalert2';
 import usersApi from '../../api/usersApi';
 import {
   GET_USER_LIST_REQUEST, GET_USER_LIST_SUCCESS, GET_USER_LIST_FAIL,
@@ -8,7 +8,7 @@ import {
   SET_IS_EXIST_USER_MODIFIED,
   GET_INFO_USER_REQUEST, GET_INFO_USER_SUCCESS, GET_INFO_USER_FAIL, GET_INFO_REVIEWER_REQUEST, GET_INFO_REVIEWER_SUCCESS, GET_INFO_REVIEWER_FAIL,
 } from '../constants/UsersManagement';
-import { LOGIN_SUCCESS } from '../constants/Auth';
+import { LOGIN_SUCCESS, LOGOUT } from "../constants/Auth";
 
 export const getUsersList = () => {
   return (dispatch) => {
@@ -64,16 +64,27 @@ export const resetUserList = () => {
   }
 }
 
-export const putUserChangePass = (newPassword, oldPassword) => {
+export const putUserChangePass = (newPassword, oldPassword, history) => {
   return (dispatch) => {
     usersApi.editPassword(newPassword, oldPassword)
       .then(result => {
         Swal.fire({
           position: "center",
           icon: "success",
-          title: "Cập nhật thành công!",
+          title: "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
           showConfirmButton: false,
-          timer: 1500,
+          timer: 2000,
+        }).then(() => {
+          localStorage.removeItem("user");
+          localStorage.removeItem("userInfo");
+          dispatch({
+            type: LOGOUT,
+          });
+          if (history) {
+            history.push("/dangnhap");
+          } else {
+            window.location.href = "/dangnhap";
+          }
         });
       })
       .catch(
@@ -81,7 +92,7 @@ export const putUserChangePass = (newPassword, oldPassword) => {
           Swal.fire({
             position: "center",
             icon: "error",
-            title: "Nhập mật khẩu sai!",
+            title: "Mật khẩu hiện tại không chính xác!",
             showConfirmButton: false,
             timer: 1500,
           });

@@ -1,7 +1,4 @@
-﻿.film {
-  // position: relative;
-  // width: 100%;
-  // margin: 10px;
+.film {
   cursor: auto;
   &:hover .film__content .film__button a {
     opacity: 1;
@@ -12,15 +9,6 @@
     opacity: 0;
     transition: all 0.2s;
   }
-  // hiệu ứng biến mất chữ
-  // &:hover .film__content p:nth-child(1) {
-  //     opacity: 0;
-  //     transition: all 0.2s;
-  // }
-  // fix hieu ung ko bien mat
-  // &:hover .film__content #soon {
-  //     opacity: 1;
-  // }
   // hiệu ứng nút play
   &:hover .film__img .film__poster .play__trailer {
     opacity: 1;
@@ -46,7 +34,7 @@
         top: 0;
         background: linear-gradient(to top, rgba(0,0,0,0.6), transparent 100%);
         opacity: 0;
-        transition: all 0.2 s 0.2 s;
+        transition: all 0.2s;
       }
       .play__trailer {
         position: absolute;
@@ -60,7 +48,7 @@
         border-radius: 50px;
         line-height: 60px;
         cursor: pointer;
-        transition: all 0.2 s;
+        transition: all 0.2s;
         opacity: 0;
         a {
           i {
@@ -90,7 +78,7 @@
       color: #fff;
 
       p {
-        font-size: 16x;
+        font-size: 16px;
         margin: 0 !important;
       }
     }
@@ -146,21 +134,34 @@
     }
     .film__button {
       cursor: pointer;
+      display: flex;
+      justify-content: center;
       a {
         position: absolute;
-        top: 7px;
-        left: 0;
-        display: block;
-        width: 100%;
-        border-radius: 4px;
-        color: #fff;
-        font-size: 20px;
-        padding: 10px;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: inline-block;
+        width: auto;
+        min-width: 120px;
+        border-radius: 6px;
+        background-color: #f26b38 !important;
+        color: #fff !important;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 7px 18px;
         text-align: center;
         text-decoration: none;
-        font-weight: 600;
+        text-transform: uppercase;
         opacity: 0;
-        transition: all 0.2 s;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(242, 107, 56, 0.35);
+        &:hover {
+          background-color: #e05825 !important;
+          transform: translateX(-50%) scale(1.05);
+          box-shadow: 0 6px 16px rgba(242, 107, 56, 0.45);
+        }
       }
     }
     .not_hide {

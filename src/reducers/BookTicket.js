@@ -90,6 +90,83 @@ const bookTicketReducer = (state = initialState, action) => {
       }
     }
 
+    case "SYNC_HOLDING_SEATS": {
+      const { holdingSeatIds } = action.payload;
+      const updatedListSeat = state.listSeat.map((seat) => {
+        if (seat.isOccupied === 1) return seat; // Đã mua giữ nguyên 1
+        const isHolding = holdingSeatIds && holdingSeatIds.includes(seat.id);
+        return {
+          ...seat,
+          isOccupied: isHolding ? 2 : 0,
+          selected: isHolding ? false : seat.selected,
+        };
+      });
+
+      const updatedListSeatSelected = updatedListSeat
+        .filter((seat) => seat.selected)
+        .map((seat) => seat.name || seat.label);
+
+      const basePrice = state.thongTinPhongVe?.data?.content[0]?.price || 70000;
+      const amount = updatedListSeat
+        .filter((seat) => seat.selected)
+        .reduce((sum, seat) => {
+          const p = (seat.seatType === "VIP" || seat.type === "VIP") ? basePrice + 10000 : basePrice;
+          return sum + p;
+        }, 0);
+
+      const danhSachVe = updatedListSeat
+        .filter((seat) => seat.selected)
+        .map((seat) => ({ id: seat.id }));
+
+      return {
+        ...state,
+        listSeat: updatedListSeat,
+        listSeatSelected: updatedListSeatSelected,
+        isSelectedSeat: updatedListSeatSelected.length > 0,
+        amount,
+        danhSachVe,
+      };
+    }
+
+    case "UPDATE_SEAT_REALTIME": {
+      const { seatId, isOccupied } = action.payload;
+      const updatedListSeat = state.listSeat.map((seat) => {
+        if (seat.id === seatId) {
+          return {
+            ...seat,
+            isOccupied: isOccupied,
+            selected: isOccupied !== 0 ? false : seat.selected,
+          };
+        }
+        return seat;
+      });
+
+      const updatedListSeatSelected = updatedListSeat
+        .filter((seat) => seat.selected)
+        .map((seat) => seat.name || seat.label);
+
+      const basePrice = state.thongTinPhongVe?.data?.content[0]?.price || 70000;
+      const amount = updatedListSeat
+        .filter((seat) => seat.selected)
+        .reduce((sum, seat) => {
+          const p = (seat.seatType === "VIP" || seat.type === "VIP") ? basePrice + 10000 : basePrice;
+          return sum + p;
+        }, 0);
+
+      const danhSachVe = updatedListSeat
+        .filter((seat) => seat.selected)
+        .map((seat) => ({ id: seat.id }));
+
+      return {
+        ...state,
+        listSeat: updatedListSeat,
+        listSeatSelected: updatedListSeatSelected,
+        isSelectedSeat: updatedListSeatSelected.length > 0,
+        amount,
+        danhSachVe,
+      };
+    }
+
     // selecting seat
     case CHANGE_LISTSEAT: {
       return {

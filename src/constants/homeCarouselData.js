@@ -1,36 +1,51 @@
-﻿/**
- * Landscape hinhAnh data for home carousel mapped to real trailers & movies
+/**
+ * 4 Banner chính thức từ thư mục thanh trượt (Đã loại bỏ Odyssey)
  */
-
 const homeCarouselData = [
   {
-    hinhAnh: "https://photo2.tinhte.vn/data/attachment-files/2021/12/5794438_cover.jpg",
-    trailer: "https://www.youtube.com/watch?v=daHCu_jU5mQ",
-    tenPhim: "Người Nhện: Không Còn Nhà",
-    biDanh: "nguoi-nhen-khong-con-nha",
-    maPhim: 7,
+    maPhim: 8,
+    id: 8,
+    hinhAnh: "/img/movies/nghi-he-so-nghi-huu-1_1786436532090.jpg",
+    largeImageURL: "/img/movies/nghi-he-so-nghi-huu-1_1786436532090.jpg",
+    trailer: "https://www.youtube.com/embed/RgFO3duBbPw",
+    trailerURL: "https://www.youtube.com/embed/RgFO3duBbPw",
+    tenPhim: "Nghỉ Hè Sợ Nghỉ Hưu",
+    name: "Nghỉ Hè Sợ Nghỉ Hưu",
+    biDanh: "nghi-he-so-nghi-huu",
   },
   {
-    hinhAnh: "https://images2.thanhnien.vn/528040425431871488/2023/12/26/av-17035541620941917770857.jpg",
-    trailer: "https://www.youtube.com/watch?v=EVWdzVtSh1I",
-    tenPhim: "Venom: Đối Mặt Tử Thù",
-    biDanh: "venom-doi-mat-tu-thu",
-    maPhim: 2,
+    maPhim: 9,
+    id: 9,
+    hinhAnh: "/img/movies/spiderman-brand-new-day-1_1784708435729.jpg",
+    largeImageURL: "/img/movies/spiderman-brand-new-day-1_1784708435729.jpg",
+    trailer: "https://www.youtube.com/embed/b_FbrHg9118",
+    trailerURL: "https://www.youtube.com/embed/b_FbrHg9118",
+    tenPhim: "Người Nhện: Khởi Đầu Mới",
+    name: "Người Nhện: Khởi Đầu Mới",
+    biDanh: "spiderman-brand-new-day",
   },
   {
-    hinhAnh: "https://images.squarespace-cdn.com/content/v1/5ad9326e857862ee5b3fc8f6/1628177439169-E65T2T099W1C9N0QY9B0/Doraemon+Stand+by+Me+2.jpg",
-    trailer: "https://www.youtube.com/watch?v=GXnOs4Hj8MA",
-    tenPhim: "Doraemon: Ôi Bạn Ơi 2",
-    biDanh: "doraemon-oi-ban-oi-2",
-    maPhim: 4,
+    maPhim: 13,
+    id: 13,
+    hinhAnh: "/img/movies/insidious-sneak-2048_1786436889562.jpg",
+    largeImageURL: "/img/movies/insidious-sneak-2048_1786436889562.jpg",
+    trailer: "https://www.youtube.com/embed/bmDLI7kCPPw",
+    trailerURL: "https://www.youtube.com/embed/bmDLI7kCPPw",
+    tenPhim: "Quỷ Quyệt: Ranh Giới Vô Định",
+    name: "Quỷ Quyệt: Ranh Giới Vô Định",
+    biDanh: "insidious-sneak",
   },
   {
-    hinhAnh: "https://kenh14cdn.com/203336854389633024/2021/8/4/photo-1-1628046162382433010170.jpg",
-    trailer: "https://www.youtube.com/watch?v=Q_rK9UlUN-Q",
-    tenPhim: "BlackPink The Movie",
-    biDanh: "blackpink-the-movie",
-    maPhim: 6,
-  },
+    maPhim: 19,
+    id: 19,
+    hinhAnh: "/img/movies/ho-linh-trang-si-2_1786778215929.jpg",
+    largeImageURL: "/img/movies/ho-linh-trang-si-2_1786778215929.jpg",
+    trailer: "https://www.youtube.com/embed/z4VtBgfxawc",
+    trailerURL: "https://www.youtube.com/embed/z4VtBgfxawc",
+    tenPhim: "Hộ Linh Tráng Sĩ",
+    name: "Hộ Linh Tráng Sĩ",
+    biDanh: "ho-linh-trang-si",
+  }
 ];
 
 export default homeCarouselData;

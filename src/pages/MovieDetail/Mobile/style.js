@@ -38,6 +38,32 @@ const useStyles = makeStyles({
     right: 0,
     display: props => props.openVideo ? "block" : "none"
   },
+    ratingTrigger: {
+    display: "inline-flex",
+    alignItems: "center",
+    cursor: "pointer",
+    margin: "6px 0 10px 0",
+    padding: "4px 8px",
+    borderRadius: "6px",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
+  },
+  starIcon: {
+    color: "#f58020",
+    fontSize: "18px",
+    marginRight: "4px",
+  },
+  ratingScore: {
+    color: "#f58020",
+    fontSize: "15px",
+    fontWeight: "700",
+    marginRight: "6px",
+  },
+  ratingVotes: {
+    color: "#cbd5e1",
+    fontSize: "12.5px",
+    fontWeight: "500",
+  },
   shortInfo: {
     width: "59%",
     padding: "0px 15px"

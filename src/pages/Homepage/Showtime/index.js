@@ -1,38 +1,11 @@
-﻿import React, { useState, useRef, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { useTheme } from "@material-ui/core/styles";
 import useMediaQuery from "@material-ui/core/useMediaQuery";
-import ArrowBackIosRoundedIcon from "@material-ui/icons/ArrowBackIosRounded";
-import ArrowForwardIosRoundedIcon from "@material-ui/icons/ArrowForwardIosRounded";
 
 import Desktop from "./Desktop";
 import useStyles from "./style";
 import Mobile from "./Mobile";
-import { getMovieSapChieuList } from "../../../reducers/actions/Movie";
-
-export function SampleNextArrow(props) {
-  const classes = useStyles();
-  const { onClick } = props;
-  return (
-    <ArrowForwardIosRoundedIcon
-      style={{ right: "-82px" }}
-      onClick={onClick}
-      className={classes.Arrow}
-    />
-  );
-}
-
-export function SamplePrevArrow(props) {
-  const classes = useStyles();
-  const { onClick } = props;
-  return (
-    <ArrowBackIosRoundedIcon
-      style={{ left: "-82px" }}
-      onClick={onClick}
-      className={classes.Arrow}
-    />
-  );
-}
 
 export default function SimpleTabs() {
   const theme = useTheme();
@@ -43,7 +16,6 @@ export default function SimpleTabs() {
   );
 
   const timeout = useRef(null);
-  const dispatch = useDispatch();
   const [arrayData, setarrayData] = useState({
     dailyMovieList: null,
     comingMovieList: null,
@@ -53,6 +25,7 @@ export default function SimpleTabs() {
     value: value.value,
     notDelay: value.notDelay,
   });
+
   useEffect(() => {
     return () => {
       clearTimeout(timeout.current);
@@ -66,9 +39,9 @@ export default function SimpleTabs() {
   }, [movieList, movieSapChieuList]);
 
   const handleChange = (newValue) => {
-    setValue((value) => ({ ...value, notDelay: newValue, fade: false }));
+    setValue((v) => ({ ...v, notDelay: newValue, fade: false }));
     timeout.current = setTimeout(() => {
-      setValue((value) => ({ ...value, value: newValue, fade: true }));
+      setValue((v) => ({ ...v, value: newValue, fade: true }));
     }, 100);
   };
 
@@ -82,8 +55,8 @@ export default function SimpleTabs() {
 
   return (
     <div id="lichchieu" className={classes.rootShowtime}>
-      <div className="galaxy-section-container">
-        <div className="galaxy-section-header">
+      <div className={classes.headerContainer}>
+        <div className="galaxy-section-header-clean">
           <span className="galaxy-title-bar"></span>
           <h2 className="galaxy-title-text">PHIM</h2>
           <div className="galaxy-tabs">

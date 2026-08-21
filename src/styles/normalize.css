@@ -1,4 +1,4 @@
-﻿/* custom normalize */
+/* custom normalize */
 * {
   margin: 0;
   padding: 0;
@@ -416,18 +416,39 @@ template {
 /* Standard Galaxy Cinema Section Styles */
 .galaxy-section-container {
     width: 100%;
-    max-width: 940px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 0 10px;
+    padding: 0 20px;
     box-sizing: border-box;
 }
 
 .galaxy-section-header {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     margin-bottom: 22px;
     padding: 0;
     width: 100%;
+}
+
+.galaxy-section-header .galaxy-header-left {
+    display: flex;
+    align-items: center;
+}
+
+.galaxy-section-header .galaxy-location-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #034ea2;
+    cursor: pointer;
+}
+
+.galaxy-section-header .galaxy-location-badge .location-icon {
+    font-size: 17px;
+    color: #034ea2;
 }
 
 .galaxy-section-header .galaxy-title-bar {
@@ -441,9 +462,9 @@ template {
 
 .galaxy-section-header .galaxy-title-text {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
-    color: #333333;
+    color: #4a4a4a;
     text-transform: uppercase;
     margin: 0;
     line-height: 1;
@@ -476,6 +497,65 @@ template {
 }
 
 .galaxy-section-header .galaxy-tab-btn.active {
+    color: #034ea2 !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #034ea2 !important;
+}
+
+.galaxy-section-header-clean {
+    display: flex;
+    align-items: center;
+    margin-bottom: 22px;
+    padding: 0;
+    width: 100%;
+}
+
+.galaxy-section-header-clean .galaxy-title-bar {
+    width: 4px;
+    height: 22px;
+    background-color: #034ea2;
+    border-radius: 2px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.galaxy-section-header-clean .galaxy-title-text {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: 0.5px;
+}
+
+.galaxy-section-header-clean .galaxy-tabs {
+    display: flex;
+    align-items: center;
+    margin-left: 32px;
+    gap: 24px;
+}
+
+.galaxy-section-header-clean .galaxy-tab-btn {
+    background: none;
+    border: none;
+    outline: none;
+    padding: 2px 0 6px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #718096;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.galaxy-section-header-clean .galaxy-tab-btn:hover {
+    color: #034ea2;
+}
+
+.galaxy-section-header-clean .galaxy-tab-btn.active {
     color: #034ea2 !important;
     font-weight: 700 !important;
     border-bottom: 2px solid #034ea2 !important;

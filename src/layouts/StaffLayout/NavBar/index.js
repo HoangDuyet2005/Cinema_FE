@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 
 import MovieIcon from '@material-ui/icons/Movie';
 import PeopleAltIcon from '@material-ui/icons/PeopleAlt';
@@ -24,6 +24,11 @@ import { GET_INFO_USER_FAIL, GET_INFO_USER_REQUEST, GET_INFO_USER_SUCCESS } from
 import usersApi from '../../../api/usersApi';
 
 const items = [
+  {
+    href: '/staff/check-ticket',
+    icon: PostAddIcon,
+    title: 'Soát vé & In vé tại quầy'
+  },
   {
     href: '/staff/movies',
     icon: MovieIcon,

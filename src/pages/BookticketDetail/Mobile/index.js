@@ -9,6 +9,7 @@ import ListSeat from "../ListSeat";
 import PayMent from "../PayMent";
 import { bookTicket } from "../../../reducers/actions/BookTicket";
 import ResultBookticket from "../ResultBookticket";
+import bookingApi from "../../../api/bookingApi";
 import {
   RESET_DATA_BOOKTICKET,
   SET_STEP,

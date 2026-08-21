@@ -1,32 +1,15 @@
-﻿import React, { useEffect } from 'react';
-import PropTypes from 'prop-types';
-import Box from '@material-ui/core/Box';
-import Fade from '@material-ui/core/Fade';
-import { NavLink, useHistory } from 'react-router-dom';
-
-import useStyles from './style';
-import Seperate from '../../../components/Seperate';
-import { useDispatch, useSelector } from 'react-redux';
-import { getEventsList } from '../../../reducers/actions/EventsManagement';
-
-function TabPanel(props) {
-  const { isMobile, children, value, index, ...other } = props;
-  return (
-    <div hidden={value !== index} {...other}>
-      <Box p={0}>{children}</Box>
-    </div>
-  );
-}
-
-TabPanel.propTypes = {
-  children: PropTypes.node,
-  index: PropTypes.any.isRequired,
-  value: PropTypes.any.isRequired,
-};
+import React, { useEffect } from "react";
+import Slider from "react-slick";
+import { NavLink } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getEventsList } from "../../../reducers/actions/EventsManagement";
+import useStyles from "./style";
 
 export default function SimpleTabs() {
   const dispatch = useDispatch();
-  let {
+  const classes = useStyles();
+
+  const {
     eventList,
     errorDelete,
     successDelete,
@@ -46,81 +29,105 @@ export default function SimpleTabs() {
     }
   }, []);
 
-  const classes = useStyles();
-  const history = useHistory();
-
-  const handlerSeeMore = () => {
-    history.push('/event-all');
-  };
-
-  const newsItems = (eventList?.data?.content || []).filter(
+  const rawEvents = eventList?.data?.content || eventList?.data || [];
+  const newsItems = rawEvents.filter(
     (event) =>
-      event?.status === 'CREATE' &&
-      event?.status !== 'DELETE' &&
-      event?.type === 'NEWS'
+      event?.status === "CREATE" &&
+      event?.status !== "DELETE" &&
+      event?.type === "NEWS"
   );
+
+  const sliderSettings = {
+    dots: false,
+    arrows: false,
+    infinite: newsItems.length > 4,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    swipeToSlide: true,
+    touchThreshold: 10,
+    autoplay: true,
+    autoplaySpeed: 3500,
+    pauseOnHover: true,
+    cssEase: "ease-out",
+    responsive: [
+      {
+        breakpoint: 1200,
+        settings: {
+          slidesToShow: 3,
+          slidesToScroll: 1,
+          swipeToSlide: true,
+          infinite: newsItems.length > 3,
+        },
+      },
+      {
+        breakpoint: 768,
+        settings: {
+          slidesToShow: 2,
+          slidesToScroll: 1,
+          swipeToSlide: true,
+          infinite: newsItems.length > 2,
+        },
+      },
+      {
+        breakpoint: 480,
+        settings: {
+          slidesToShow: 1,
+          slidesToScroll: 1,
+          swipeToSlide: true,
+          infinite: newsItems.length > 1,
+        },
+      },
+    ],
+  };
 
   return (
     <div className={classes.root} id="tintuc">
       <div className="galaxy-section-container">
-        {/* Section Heading: | TIN TỨC KHUYẾN MÃI - Always visible */}
-        <div className="galaxy-section-header">
+        {/* Section Heading: | TIN KHUYẾN MÃI */}
+        <div className="galaxy-section-header-clean" style={{ marginBottom: "20px" }}>
           <span className="galaxy-title-bar"></span>
-          <h2 className="galaxy-title-text">TIN TỨC KHUYẾN MÃI</h2>
+          <h2 className="galaxy-title-text">
+            TIN KHUYẾN MÃI
+          </h2>
         </div>
 
-        <Fade timeout={400} in={true}>
-          <TabPanel value={0} index={0}>
-            {newsItems.length > 0 ? (
-              <div className="row" style={{ margin: 0 }}>
-                {newsItems.slice(0, 4).map((event, index) => (
-                  <div
-                    className={classes.repons}
-                    key={index}
-                    style={{ cursor: 'pointer', marginBottom: 20 }}
-                  >
+        {/* Slider Carousel */}
+        {newsItems.length > 0 ? (
+          <div className={classes.sliderWrapper}>
+            <Slider {...sliderSettings}>
+              {newsItems.map((event, index) => {
+                const itemTitle = event.title || event.brief || "Tin tức khuyến mãi";
+                return (
+                  <div key={event.id || index} className={classes.slideItem}>
                     <NavLink
-                      to={`/detail-news/${event?.id}`}
+                      to={`/detail-news/${event.id}`}
                       className={classes.newsCard}
                     >
                       <div className={classes.imgWrapper}>
                         <img
                           className={classes.fullImg}
-                          src={event?.mainImage}
-                          alt="news-movie"
+                          src={event.mainImage}
+                          alt={itemTitle}
+                          onError={(e) => {
+                            e.target.src = "/img/hinh-1-14.jpg";
+                          }}
                         />
                       </div>
-                      <div className="py-2">
-                        <h4 className={classes.newsTitle}>{event.brief}</h4>
-                      </div>
+                      <h4 className={classes.newsTitle}>
+                        {itemTitle}
+                      </h4>
                     </NavLink>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: '#888' }}>
-                <p>Đang cập nhật tin tức khuyến mãi mới...</p>
-              </div>
-            )}
-
-            {/* See More Button - Always rendered */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                marginTop: '10px',
-              }}
-            >
-              <button
-                className="btn-xem-them-global"
-                type="button"
-                onClick={handlerSeeMore}
-              >
-                Xem thêm
-              </button>
-            </div>
-          </TabPanel>
-        </Fade>
+                );
+              })}
+            </Slider>
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "30px 0", color: "#888" }}>
+            <p>Đang cập nhật tin tức khuyến mãi mới...</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,166 +1,203 @@
+import React from "react";
+import useStyles from "./style";
+import formatDate from "../../../utilities/formatDate";
+import { QRCodeSVG } from "qrcode.react";
 
-import React, { useEffect, useState } from 'react'
+export default function PopUp(props) {
+  const classes = useStyles();
+  const ThongTin = props.ThongTin?.data || props.ThongTin;
 
-import { useSelector } from 'react-redux'
+  const movie = ThongTin?.schedule?.movie;
+  const branch = ThongTin?.schedule?.branch;
+  const room = ThongTin?.schedule?.room;
+  const schedule = ThongTin?.schedule;
+  const user = ThongTin?.user;
+  const seats = ThongTin?.seats || [];
+  const price = ThongTin?.price != null ? Number(ThongTin.price) : 0;
+  const bookingCode = ThongTin?.bookingCode || (ThongTin?.id ? `WC2026-${String(ThongTin.id).padStart(6, "0")}` : "WC2026-TICKET");
+  const isCheckedIn = ThongTin?.isCheckedIn || false;
 
-import useStyles from './style'
-import { colorTheater } from '../../../constants/theaterData'
-import bookingApi from '../../../api/bookingApi'
-import { useParams } from 'react-router-dom'
-import formatDate from '../../../utilities/formatDate'
-
-export default function DetailPopup({ ThongTin }) {
-    const { isMobile, amount, email, phone, paymentMethod, listSeatSelected, successBookingTicketMessage, errorBookTicketMessage, danhSachPhongVe: { thongTinPhim }, thongTinPhongVe } = useSelector((state) => state.bookTicketReducer)
-    const { currentUser } = useSelector((state) => state.authReducer)
-    // const classes = useStyles({ thongTinPhongVe, color: colorTheater[thongTinPhongVe?.setRap.slice(0, 3).toUpperCase()], isMobile })
-    const classes = useStyles({ thongTinPhongVe, isMobile })
-    console.log( "resThongTinponse", ThongTin);
-    const [thongTin, setThongTin] = useState(ThongTin)
-    // useEffect(() => {
-    //     bookingApi.getLichChieuChiTietHeThong(ThongTin?.schedule?.movie?.id, ThongTin?.schedule?.branch?.id, ThongTin?.schedule?.startDate, ThongTin?.schedule?.startTime, ThongTin?.schedule?.room?.id)
-    //         .then((response) => {
-    //             console.log(response.data.data);
-    //             setThongTin(response.data);
-    //         })
-    //         .catch((err) => {
-    //             console.log(err);
-    //         })
-    // }, []);
-
-    return (
-        // <div className={classes.resultBookticket}>
-        //     <div className={classes.infoTicked} >
-        //         <div className={classes.infoTicked__img}>
-        //             <img src={thongTin?.data?.content[0]?.movie?.smallImageURl} />
-        //         </div>
-        //         <div className={classes.infoTicked__txt}>
-        //             <p className={classes.tenPhim}>
-        //                 {thongTin?.data?.content[0]?.movie?.name}
-        //             </p>
-        //             <p className={classes.text__first}><span>{thongTin?.data?.content[0]?.branch?.name.split("-")[0]}</span><span className={classes.text__second}> - {thongTin?.data?.content[0]?.branch?.phoneNo}</span></p>
-        //             <p className={classes.diaChi} >{thongTin?.data?.content[0]?.branch?.address}</p>
-        //             <table className={classes.table}>
-        //                 <tbody>
-        //                     <tr>
-        //                         <td valign='top' >Lịch chiếu:</td>
-        //                         <td valign='top'>{`${thongTin?.data?.content[0]?.startTime}, ${thongTin?.data?.content[0]?.startDate}`}</td>
-        //                     </tr>
-        //                     <tr>
-        //                         <td valign='top'>Phòng:</td>
-        //                         <td>{thongTin?.data?.content[0]?.room?.name}</td>
-        //                     </tr>
-        //                     <tr>
-        //                         <td valign='top'>Ghế(s):</td>
-        //                         <td>{listSeatSelected?.join(", ")}</td>
-        //                     </tr>
-        //                 </tbody>
-        //             </table>
-        //         </div>
-        //     </div>
-        //     <div>
-        //         <div>
-        //             <h3 className={classes.infoResult_label}>Thông tin vé</h3>
-        //             <table className={`${classes.table} table`}>
-        //                 <tbody>
-        //                     <tr>
-        //                         <td valign='top' >Tên:</td>
-        //                         <td>{currentUser?.data?.name}</td>
-        //                     </tr>
-        //                     <tr>
-        //                         <td valign='top'>Email:</td>
-        //                         <td>{email}</td>
-        //                     </tr>
-        //                     <tr>
-        //                         <td valign='top'>Trạng thái:</td>
-        //                         <td>
-        //                             {successBookingTicketMessage && <span>Đặt vé thành công</span>}
-        //                             {errorBookTicketMessage && <span>Đặt vé thất bại: <span className={classes.errorColor}>{errorBookTicketMessage}</span></span>}
-        //                         </td>
-        //                     </tr>
-        //                     <tr>
-        //                         <td valign='top' >Tổng cộng:</td>
-        //                         <td valign='top'><span>{`${amount.toLocaleString('vi-VI')} đ`}</span></td>
-        //                     </tr>
-        //                 </tbody>
-        //             </table>
-        //             {successBookingTicketMessage && <p className={classes.noteresult}>Kiểm tra vé trong thông tin cá nhân!</p>}
-        //         </div>
-        //     </div>
-        // </div>
-
-        <div className={classes.resultBookticket}>
-            <div className={classes.infoTicked} >
-                <div className={classes.infoTicked__img}>
-                    <img style={{width:"200px"}} src={ThongTin?.schedule?.movie?.smallImageURl} alt=""/>
-                </div>
-                <div className={classes.infoTicked__txt}>
-                    <p className={classes.tenPhim}>
-                        {ThongTin?.schedule?.movie?.name}
-                    </p>
-                    <p className={classes.text__first}><span>{ThongTin?.schedule?.branch?.name.split("-")[0]}</span><span className={classes.text__second}> - {ThongTin?.schedule?.branch?.phoneNo}</span></p>
-                    <p className={classes.diaChi} >{ThongTin?.schedule?.branch?.address}</p>
-                    <table className={classes.table}>
-                        <tbody>
-                            <tr>
-                                <td valign='top' >Lịch chiếu:</td>
-                                <td valign='top'>{`${ThongTin?.schedule?.startTime}, ${formatDate(ThongTin?.schedule?.startDate).dateFull}`}</td>
-                            </tr>
-                            <tr>
-                                <td valign='top'>Phòng:</td>
-                                <td>{ThongTin?.schedule?.room?.name}</td>
-                            </tr>
-                            <tr>
-                                <td valign='top'>Ghế:</td>
-                                {/* <td>{ThongTin?.seats?.name?.join(", ")}</td> */}
-                                {ThongTin?.status === "EXPIRATION" && <span>Trống các ghế: </span>}
-                                <td>
-                                    {ThongTin?.seats?.map((seat, index) => (
-                                        <span key={index}>{seat.name}{", "}</span>
-                                    ))}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div>
-                <div>
-                    <h3 className={classes.infoResult_label}>Thông tin hóa đơn/thanh toán</h3>
-                    <table className={`${classes.table} table`}>
-                        <tbody>
-                            <tr>
-                                <td valign='top' >Tên người đặt:</td>
-                                <td>{ThongTin?.user?.name}</td>
-                            </tr>
-                            <tr>
-                                <td valign='top'>Email:</td>
-                                <td>{ThongTin?.user?.email}</td>
-                            </tr>
-                            <tr>
-                                <td valign='top'>Trạng thái:</td>
-                                <td>
-                                    {ThongTin?.status === "SUCCESS" && <span>Đã thanh toán</span>}
-                                    {ThongTin?.status === "WAITING_PAYMENT" && <span>Chờ thanh toán</span>}
-                                    {ThongTin?.status === "EXPIRATION" && <span>Hết hạn thanh toán - Hủy vé</span>}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td valign='top' >Mã thanh toán:</td>
-                                <td valign='top'><span>{ThongTin?.id}</span></td>
-                            </tr>
-                            <tr>
-                                <td valign='top' >Số lượng vé:</td>
-                                <td valign='top'><span>{ThongTin?.amountTicket} vé</span></td>
-                            </tr>
-                            <tr>
-                                <td valign='top' >Tổng cộng:</td>
-                                <td valign='top'><span>{`${ThongTin?.price.toLocaleString('vi-VI')} đ`}</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+  return (
+    <div className={classes.resultBookticket} style={{ padding: "20px" }}>
+      {/* QR Code & Booking Code Banner */}
+      <div style={{
+        backgroundColor: "#fff7ed",
+        border: "1.5px dashed #f97316",
+        borderRadius: "10px",
+        padding: "16px",
+        marginBottom: "20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: "16px"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ backgroundColor: "#fff", padding: "6px", borderRadius: "6px", boxShadow: "0 2px 6px rgba(0,0,0,0.06)" }}>
+            <QRCodeSVG value={bookingCode} size={90} level="H" />
+          </div>
+          <div>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#ea580c", textTransform: "uppercase" }}>
+              MÃ ĐẶT VÉ
+            </span>
+            <h4 style={{ margin: "2px 0 4px 0", fontSize: "20px", fontWeight: 800, color: "#1e293b" }}>
+              {bookingCode}
+            </h4>
+            <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>
+              Quét mã này tại quầy hoặc máy tự phục vụ để lấy vé
+            </p>
+          </div>
         </div>
-    )
-}
 
+        <div>
+          {isCheckedIn ? (
+            <span style={{
+              backgroundColor: "#dcfce7",
+              color: "#166534",
+              border: "1px solid #bbf7d0",
+              padding: "6px 12px",
+              borderRadius: "20px",
+              fontSize: "12px",
+              fontWeight: 700,
+              display: "inline-block"
+            }}>
+              ✅ ĐÃ NHẬN VÉ TẠI QUẦY
+            </span>
+          ) : (
+            <span style={{
+              backgroundColor: "#fef3c7",
+              color: "#92400e",
+              border: "1px solid #fde68a",
+              padding: "6px 12px",
+              borderRadius: "20px",
+              fontSize: "12px",
+              fontWeight: 700,
+              display: "inline-block"
+            }}>
+              🎫 CHƯA NHẬN VÉ
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className={classes.infoTicked}>
+        <div className={classes.infoTicked__img}>
+          <img
+            style={{ width: "180px", borderRadius: "8px", objectFit: "cover" }}
+            src={movie?.smallImageURl || movie?.largeImageURL || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800"}
+            alt={movie?.name || "Poster Phim"}
+          />
+        </div>
+        <div className={classes.infoTicked__txt}>
+          <p className={classes.tenPhim} style={{ fontSize: "20px", fontWeight: 700, color: "#e87722" }}>
+            {movie?.name || "Thông tin phim"}
+          </p>
+          <p className={classes.text__first}>
+            <span>{branch?.name ? branch.name.split("-")[0] : "Rạp"}</span>
+            {branch?.phoneNo && <span className={classes.text__second}> - {branch.phoneNo}</span>}
+          </p>
+          <p className={classes.diaChi}>{branch?.address || ""}</p>
+          <table className={classes.table}>
+            <tbody>
+              <tr>
+                <td valign="top" style={{ width: "100px", fontWeight: 600 }}>Lịch chiếu:</td>
+                <td valign="top">
+                  {schedule?.startTime ? `${schedule.startTime}, ` : ""}
+                  {schedule?.startDate ? formatDate(schedule.startDate).dateFull : "N/A"}
+                </td>
+              </tr>
+              <tr>
+                <td valign="top" style={{ fontWeight: 600 }}>Phòng chiếu:</td>
+                <td>{room?.name || "N/A"}</td>
+              </tr>
+              <tr>
+                <td valign="top" style={{ fontWeight: 600 }}>Ghế:</td>
+                <td>
+                  {seats.length > 0 ? (
+                    seats.map((seat, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          backgroundColor: "#f26b38",
+                          color: "#fff",
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                          fontWeight: 600,
+                          fontSize: "12px",
+                          marginRight: "6px",
+                          display: "inline-block",
+                          marginBottom: "4px"
+                        }}
+                      >
+                        {seat?.name || seat}
+                      </span>
+                    ))
+                  ) : (
+                    <span>Chưa có thông tin ghế</span>
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ marginTop: "20px", borderTop: "1px dashed #e2e8f0", paddingTop: "15px" }}>
+        <h3 className={classes.infoResult_label} style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "12px" }}>
+          Thông tin hóa đơn thanh toán
+        </h3>
+        <table className={`${classes.table} table`}>
+          <tbody>
+            <tr>
+              <td valign="top" style={{ width: "140px", fontWeight: 600 }}>Mã hóa đơn:</td>
+              <td valign="top"><strong>#{ThongTin?.id || "N/A"}</strong> ({bookingCode})</td>
+            </tr>
+            <tr>
+              <td valign="top" style={{ fontWeight: 600 }}>Người đặt vé:</td>
+              <td>{user?.name || user?.username || "Khách hàng"}</td>
+            </tr>
+            <tr>
+              <td valign="top" style={{ fontWeight: 600 }}>Email:</td>
+              <td>{user?.email || "N/A"}</td>
+            </tr>
+            <tr>
+              <td valign="top" style={{ fontWeight: 600 }}>Trạng thái thanh toán:</td>
+              <td>
+                {ThongTin?.status === "SUCCESS" && <span style={{ color: "#16a34a", fontWeight: 700 }}>✅ Đã thanh toán</span>}
+                {ThongTin?.status === "WAITING_PAYMENT" && <span style={{ color: "#d97706", fontWeight: 700 }}>⏳ Chờ thanh toán</span>}
+                {ThongTin?.status === "EXPIRATION" && <span style={{ color: "#dc2626", fontWeight: 700 }}>❌ Đã hủy / Hết hạn</span>}
+                {!ThongTin?.status && <span>N/A</span>}
+              </td>
+            </tr>
+            <tr>
+              <td valign="top" style={{ fontWeight: 600 }}>Số lượng vé:</td>
+              <td valign="top"><span>{ThongTin?.amountTicket || seats.length || 0} vé</span></td>
+            </tr>
+            <tr>
+              <td valign="top" style={{ fontWeight: 600 }}>Tổng tiền:</td>
+              <td valign="top"><strong style={{ color: "#e87722", fontSize: "16px" }}>{price.toLocaleString("vi-VN")} đ</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style={{ textAlign: "right", marginTop: "15px" }}>
+          <button
+            onClick={() => window.print()}
+            style={{
+              backgroundColor: "#f8fafc",
+              color: "#334155",
+              border: "1px solid #cbd5e1",
+              padding: "8px 16px",
+              borderRadius: "6px",
+              fontWeight: 600,
+              fontSize: "13px",
+              cursor: "pointer"
+            }}
+          >
+            🖨️ In phiếu đặt vé
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

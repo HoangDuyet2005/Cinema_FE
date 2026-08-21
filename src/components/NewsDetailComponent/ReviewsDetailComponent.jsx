@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useState } from "react";
+import moviesApi from "../../api/moviesApi";
+import React, { useEffect, useState } from "react";
 import { NavLink, useHistory } from "react-router-dom";
 import ThumbUpIcon from "@material-ui/icons/ThumbUp";
 import ShareIcon from "@material-ui/icons/Share";
@@ -55,6 +56,22 @@ export default function ReviewsDetailComponent(props) {
 
   // Comment states
   const [commentsList, setCommentsList] = useState([]);
+  const [sidebarMovies, setSidebarMovies] = useState([]);
+
+  useEffect(() => {
+    moviesApi
+      .getDanhSachPhim()
+      .then((res) => {
+        const list = res.data?.data?.content || res.data?.data || res.data || [];
+        if (Array.isArray(list)) {
+          const showingOnly = list.filter(
+            (m) => m?.isShowing === 1 || m?.dangChieu === true || m?.is_showing === 1
+          );
+          setSidebarMovies((showingOnly.length > 0 ? showingOnly : list).slice(0, 3));
+        }
+      })
+      .catch((err) => console.log(err));
+  }, []);
   const [commentText, setCommentText] = useState("");
   const [submittingCmt, setSubmittingCmt] = useState(false);
 
@@ -298,7 +315,10 @@ export default function ReviewsDetailComponent(props) {
     ? movieList
     : [];
 
-  const nowShowingMovies = movieDataList.slice(0, 3);
+  const showingOnly = movieDataList.filter(
+    (m) => m?.isShowing === 1 || m?.dangChieu === true || m?.is_showing === 1
+  );
+  const nowShowingMovies = (showingOnly.length > 0 ? showingOnly : movieDataList).slice(0, 3);
 
   const safeOtherArticles = Array.isArray(danhSachTinTucKhac)
     ? danhSachTinTucKhac.filter((item) => item?.id !== articleId).slice(0, 4)
@@ -331,10 +351,14 @@ export default function ReviewsDetailComponent(props) {
             Trang chủ
           </NavLink>
           <span className="breadcrumb-separator">/</span>
-          <NavLink to={categoryPath} className="breadcrumb-link">
-            {categoryName}
-          </NavLink>
-          <span className="breadcrumb-separator">/</span>
+          {!isNewsArticle && (
+            <>
+              <NavLink to="/review" className="breadcrumb-link">
+                Bình luận phim
+              </NavLink>
+              <span className="breadcrumb-separator">/</span>
+            </>
+          )}
           <span className="breadcrumb-current">
             {formatTitle(articleData.title, articleData.brief)}
           </span>
@@ -351,8 +375,8 @@ export default function ReviewsDetailComponent(props) {
               {formatTitle(articleData.title, articleData.brief)}
             </h1>
 
-            {/* Social / Badges Row - Thumbs-Up Like, No Hearts */}
-            <div className="article-social-bar">
+            {/* Social / Badges Row */}
+            <div className="article-social-bar" style={{ display: "flex", alignItems: "center", gap: "8px", margin: "16px 0 20px 0" }}>
               <button
                 type="button"
                 className={`btn-facebook-like ${isLiked ? "active" : ""}`}
@@ -373,20 +397,53 @@ export default function ReviewsDetailComponent(props) {
 
               <button
                 type="button"
-                className={`btn-save-article ${isSaved ? "saved" : ""}`}
+                className={`btn-custom-save ${isSaved ? "saved" : ""}`}
                 onClick={handleSaveToggle}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  backgroundColor: isSaved ? "#fff4eb" : "#f0f2f5",
+                  color: isSaved ? "#e87722" : "#4b4f56",
+                  border: isSaved ? "1px solid #f26b38" : "1px solid #ccd0d5",
+                  borderRadius: "4px",
+                  padding: "4px 10px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
               >
                 {isSaved ? (
-                  <BookmarkIcon className="btn-icon" />
+                  <BookmarkIcon style={{ fontSize: 16, color: "#e87722" }} />
                 ) : (
-                  <BookmarkBorderIcon className="btn-icon" />
+                  <BookmarkBorderIcon style={{ fontSize: 16, color: "#4b4f56" }} />
                 )}
-                <span>{isSaved ? "Đã lưu" : "Lưu bài viết"}</span>
+                <span style={{ color: isSaved ? "#e87722" : "#4b4f56" }}>
+                  {isSaved ? "Đã lưu" : "Lưu bài viết"}
+                </span>
               </button>
 
-              <span className="badge-view-count">
-                <VisibilityIcon className="btn-icon" />
-                <span>{articleData.view || 0} lượt xem</span>
+              <span
+                className="badge-view-count-custom"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  backgroundColor: "#f0f2f5",
+                  color: "#4b4f56",
+                  border: "1px solid #ccd0d5",
+                  borderRadius: "4px",
+                  padding: "4px 10px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  boxSizing: "border-box",
+                }}
+              >
+                <VisibilityIcon style={{ fontSize: 16, color: "#4b4f56" }} />
+                <span style={{ color: "#4b4f56" }}>{articleData.view || 0} lượt xem</span>
               </span>
             </div>
 
@@ -575,7 +632,7 @@ export default function ReviewsDetailComponent(props) {
               </div>
 
               <div className="sidebar-movies-list">
-                {nowShowingMovies.map((movie, idx) => (
+                {(sidebarMovies.length > 0 ? sidebarMovies : nowShowingMovies).map((movie, idx) => (
                   <NavLink
                     key={movie.id || idx}
                     to={`/phim/${movie.id}`}
@@ -584,21 +641,29 @@ export default function ReviewsDetailComponent(props) {
                     <div className="sidebar-movie-poster-box">
                       <img
                         src={
+                          movie.smallImageURl ||
+                          movie.smallImageURL ||
+                          movie.small_imageurl ||
                           movie.hinhAnh ||
-                          movie.largeImageURL ||
                           movie.poster ||
                           "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800"
                         }
-                        alt={movie.tenPhim}
+                        alt={movie.tenPhim || movie.name}
                         className="sidebar-movie-poster"
                       />
                       {/* Rating Badge */}
                       <div className="sidebar-badge-rating">
                         <StarIcon className="star-icon" />
-                        <span>{movie.danhGia || 9.5}</span>
+                        <span>
+                          {movie.totalVotes > 0 && movie.avgRating != null
+                            ? Number(movie.avgRating).toFixed(1)
+                            : movie.danhGia != null && movie.danhGia > 0
+                            ? Number(movie.danhGia).toFixed(1)
+                            : "0"}
+                        </span>
                       </div>
                       {/* Age Rating Badge */}
-                      <div className="sidebar-badge-age">T13</div>
+                      <div className="sidebar-badge-age">{movie.rated || "P"}</div>
                     </div>
                     <h5 className="sidebar-movie-name">
                       {movie.tenPhim || movie.title || movie.name}
