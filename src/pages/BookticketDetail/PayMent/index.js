@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useHistory, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import bookingApi from "../../../api/bookingApi";
 import formatDate from "../../../utilities/formatDate";
+import { GET_LISTSEAT_SUCCESS } from "../../../reducers/constants/BookTicket";
 
 export default function PayMent() {
   const history = useHistory();
@@ -16,17 +18,12 @@ export default function PayMent() {
     amount,
     selectedFoods,
     foodAmount,
-    email: reduxEmail,
-    phone: reduxPhone,
   } = useSelector((state) => state.bookTicketReducer);
 
   const currentUser = useSelector((state) => state.authReducer.currentUser);
+  const currentUserId = currentUser?.data?.id || currentUser?.id || 1;
 
   const [scheduleInfo, setScheduleInfo] = useState(null);
-  const [email, setEmail] = useState(reduxEmail || currentUser?.data?.email || "khachhang@worldcinema.vn");
-  const [phone, setPhone] = useState(reduxPhone || currentUser?.data?.phone || "0987654321");
-  const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -50,13 +47,65 @@ export default function PayMent() {
     }
   };
 
+  // Chuyển bước & Kiểm tra khóa ghế Realtime chống chọn trùng ghế
   const handleNextStep = () => {
     if (activeStep === 0) {
-      if (!listSeatSelected || listSeatSelected.length === 0) {
-        alert("Vui lòng chọn ít nhất 1 ghế để tiếp tục!");
+      const selectedSeatIds = (listSeat || [])
+        .filter((s) => s.selected)
+        .map((s) => s.id);
+
+      if (selectedSeatIds.length === 0) {
+        Swal.fire({
+          title: "Chưa chọn ghế",
+          text: "Vui lòng chọn ít nhất 1 ghế để tiếp tục!",
+          icon: "warning",
+          confirmButtonColor: "#ea580c",
+        });
         return;
       }
-      dispatch({ type: "SET_STEP", payload: { activeStep: 1 } });
+
+      setIsProcessing(true);
+
+      // Gọi API Khóa ghế (Hold Seats) trên Server
+      bookingApi
+        .holdSeats({
+          scheduleId: Number(param.maLichChieu),
+          seatIds: selectedSeatIds,
+          userId: Number(currentUserId),
+        })
+        .then(() => {
+          // Khóa thành công -> Chuyển sang bước 1: Chọn thức ăn
+          dispatch({ type: "SET_STEP", payload: { activeStep: 1 } });
+        })
+        .catch((err) => {
+          console.error("Lỗi khóa ghế:", err);
+          const conflictSeats = err.response?.data?.conflictSeats || [];
+          const conflictStr =
+            conflictSeats.length > 0 ? conflictSeats.join(", ") : "bạn chọn";
+
+          Swal.fire({
+            title: "Ghế đã có người chọn!",
+            text: `Ghế [${conflictStr}] vừa có người khác giữ chỗ hoặc đang thanh toán. Vui lòng chọn ghế khác!`,
+            icon: "error",
+            confirmButtonColor: "#ea580c",
+          });
+
+          // Tải lại sơ đồ ghế mới nhất từ DB
+          bookingApi
+            .getDanhSachPhongVe(param.maLichChieu)
+            .then((res) => {
+              if (res.data?.data) {
+                dispatch({
+                  type: GET_LISTSEAT_SUCCESS,
+                  payload: { data: res.data.data },
+                });
+              }
+            })
+            .catch(() => {});
+        })
+        .finally(() => {
+          setIsProcessing(false);
+        });
     } else if (activeStep === 1) {
       dispatch({ type: "SET_STEP", payload: { activeStep: 2 } });
     }
@@ -69,7 +118,12 @@ export default function PayMent() {
       .map((s) => s.id);
 
     if (selectedSeatIds.length === 0) {
-      alert("Vui lòng chọn ghế trước khi thanh toán!");
+      Swal.fire({
+        title: "Chưa chọn ghế",
+        text: "Vui lòng chọn ghế trước khi thanh toán!",
+        icon: "warning",
+        confirmButtonColor: "#ea580c",
+      });
       return;
     }
 
@@ -94,13 +148,17 @@ export default function PayMent() {
         if (paymentUrl && typeof paymentUrl === "string") {
           window.location.href = paymentUrl;
         } else {
-          alert("Không lấy được đường dẫn thanh toán từ cổng VNPay!");
+          Swal.fire("Lỗi kết nối", "Không lấy được đường dẫn thanh toán từ cổng VNPay!", "error");
           setIsProcessing(false);
         }
       })
       .catch((err) => {
         console.error("Lỗi tạo thanh toán VNPay:", err);
-        alert("Lỗi kết nối cổng thanh toán VNPay: " + (err.response?.data?.message || err.message));
+        Swal.fire(
+          "Lỗi cổng thanh toán",
+          err.response?.data?.message || err.message || "Không thể kết nối cổng VNPay!",
+          "error"
+        );
         setIsProcessing(false);
       });
   };
@@ -312,23 +370,27 @@ export default function PayMent() {
             {activeStep < 2 ? (
               <button
                 onClick={handleNextStep}
-                disabled={!listSeatSelected || listSeatSelected.length === 0}
+                disabled={isProcessing || !listSeatSelected || listSeatSelected.length === 0}
                 style={{
                   padding: "10px 28px",
                   borderRadius: "6px",
                   border: "none",
                   backgroundColor:
-                    listSeatSelected && listSeatSelected.length > 0 ? "#f97316" : "#cbd5e1",
+                    listSeatSelected && listSeatSelected.length > 0 && !isProcessing
+                      ? "#f97316"
+                      : "#cbd5e1",
                   color: "#ffffff",
                   fontSize: "14px",
                   fontWeight: "700",
                   cursor:
-                    listSeatSelected && listSeatSelected.length > 0 ? "pointer" : "not-allowed",
+                    listSeatSelected && listSeatSelected.length > 0 && !isProcessing
+                      ? "pointer"
+                      : "not-allowed",
                   outline: "none",
                   transition: "background-color 0.15s ease",
                 }}
               >
-                Tiếp tục
+                {isProcessing ? "Đang giữ ghế..." : "Tiếp tục"}
               </button>
             ) : (
               <button
@@ -347,7 +409,7 @@ export default function PayMent() {
                   transition: "background-color 0.15s ease",
                 }}
               >
-                {isProcessing ? "Đang xử lý..." : "Thanh toán"}
+                {isProcessing ? "Đang chuyển VNPay..." : "Thanh toán"}
               </button>
             )}
           </div>
