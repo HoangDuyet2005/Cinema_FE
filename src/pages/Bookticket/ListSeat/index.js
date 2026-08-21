@@ -29,7 +29,7 @@ export default function ListSeat() {
   const domToSeatElement = useRef(null);
   const stompClientRef = useRef(null);
   const [widthSeat, setWidthSeat] = useState(0);
-  const [soGhe, setSoGhe] = useState(1);
+  const [soGhe, setSoGhe] = useState(10);
   const [thongTin, setThongTin] = useState();
   const param = useParams();
 
@@ -188,10 +188,13 @@ export default function ListSeat() {
     }, []);
 
     const isSelectedSeat = newListSeatSelected.length > 0;
-    const basePrice = scheduleItem?.price || 95000;
+    const basePrice = scheduleItem?.price || 90000;
     const amount = newListSeat?.reduce((sum, seat) => {
       if (seat.selected) {
-        const p = (seat.seatType === "VIP" || seat.type === "VIP") ? basePrice + 10000 : basePrice;
+        const p = seat.price || (
+          (seat.seatType === "COUPLE" || seat.type === "COUPLE" || seat.type === 2) ? basePrice + 40000 :
+          (seat.seatType === "VIP" || seat.type === "VIP" || seat.type === 1) ? basePrice + 15000 : basePrice
+        );
         return sum + p;
       }
       return sum;
@@ -211,18 +214,21 @@ export default function ListSeat() {
 
   const color = (seat) => {
     if (seat.selected) {
-      return "#44c020";
+      return "#44c020"; // Đang chọn
     }
     if (seat.isOccupied === 1) {
-      return "#99c5ff";
+      return "#99c5ff"; // Đã bán
     }
     if (seat.isOccupied === 2) {
-      return "#ec4899";
+      return "#ec4899"; // Đang giữ chỗ realtime
     }
-    if (seat.seatType === "VIP" || seat.type === "VIP") {
-      return "#f7b500";
+    if (seat.seatType === "COUPLE" || seat.type === "COUPLE" || seat.type === 2) {
+      return "#e11d48"; // Ghế đôi (Sweetbox)
     }
-    return "#3e515d";
+    if (seat.seatType === "VIP" || seat.type === "VIP" || seat.type === 1) {
+      return "#f7b500"; // Ghế VIP
+    }
+    return "#3e515d"; // Ghế thường
   };
 
   const handlerSoGhe = (e) => {
@@ -379,16 +385,20 @@ export default function ListSeat() {
         </div>
       </div>
 
-      {/* thông tin các loại ghế */}
+      {/* thông tin các loại ghế kèm bảng giá */}
       <div className={classes.noteSeat}>
-        <div className={classes.typeSeats}>
+        <div className={classes.typeSeats} style={{ flexWrap: "wrap", gap: "15px", justifyContent: "center" }}>
           <div>
             <SeatIcon style={{ color: "#3e515d", fontSize: 27 }} />
-            <p>Ghế thường</p>
+            <p>Ghế thường <span style={{ fontSize: "11px", color: "#666" }}>({(scheduleItem?.price || 80000).toLocaleString("vi-VN")} đ)</span></p>
           </div>
           <div>
             <SeatIcon style={{ color: "#f7b500", fontSize: 27 }} />
-            <p>VIP</p>
+            <p>Ghế VIP <span style={{ fontSize: "11px", color: "#e87722", fontWeight: 700 }}>({((scheduleItem?.price || 80000) + 15000).toLocaleString("vi-VN")} đ)</span></p>
+          </div>
+          <div>
+            <SeatIcon style={{ color: "#e11d48", fontSize: 27 }} />
+            <p>Ghế đôi Couple <span style={{ fontSize: "11px", color: "#e11d48", fontWeight: 700 }}>({((scheduleItem?.price || 80000) + 40000).toLocaleString("vi-VN")} đ)</span></p>
           </div>
           <div>
             <SeatIcon style={{ color: "#44c020", fontSize: 27 }} />
@@ -399,14 +409,14 @@ export default function ListSeat() {
               <span className={classes.posiX} style={{ fontSize: "14px", lineHeight: 1 }}>🔒</span>
               <SeatIcon style={{ color: "#ec4899", fontSize: 27 }} />
             </div>
-            <p>Đã khóa</p>
+            <p>Đang giữ chỗ</p>
           </div>
           <div>
             <div style={{ position: "relative" }}>
               <p className={classes.posiX}>x</p>
               <SeatIcon style={{ color: "#99c5ff", fontSize: 27 }} />
             </div>
-            <p>Đã đặt</p>
+            <p>Đã bán</p>
           </div>
         </div>
       </div>

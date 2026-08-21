@@ -1,75 +1,138 @@
 import React from "react";
-
-import clsx from "clsx";
-import Stepper from "@material-ui/core/Stepper";
-import Step from "@material-ui/core/Step";
-import StepLabel from "@material-ui/core/StepLabel";
-import SeatIcon from "@material-ui/icons/CallToActionRounded";
-import PaymentIcon from "@material-ui/icons/Payment";
-import CheckCircleIcon from "@material-ui/icons/CheckCircle";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useHistory } from "react-router-dom";
 
-import { useStyles, ColorlibConnector } from "./style";
-import { FAKE_AVATAR } from "../../../../constants/config";
-
-export default function Stepcheckout() {
+export default function StepCheckout() {
   const history = useHistory();
-  const classes = useStyles();
+  const dispatch = useDispatch();
   const activeStep = useSelector((state) => state.bookTicketReducer.activeStep);
   const currentUser = useSelector((state) => state.authReducer.currentUser);
-  console.log(currentUser);
-  const steps = ["CHỌN GHẾ", "THANH TOÁN", "TICKET!"];
 
-  function StepIcon(props) {
-    const { active, completed } = props;
-    const icons = {
-      1: <SeatIcon />,
-      2: <PaymentIcon />,
-      3: <CheckCircleIcon />,
-    };
-    return (
-      <div
-        className={clsx(classes.stepIcon, {
-          [classes.stepIconActive]: active,
-          [classes.stepIconCompleted]: completed,
-        })}
-      >
-        {icons[String(props.icon)]}
-      </div>
-    );
-  }
-  const handleUser = () => {
-    history.push("/taikhoan");
+  // 5 bước chuẩn chuỗi rạp:
+  // 0: Chọn phim / Rạp / Suất (Đã hoàn thành trước khi vào trang này)
+  // 1: Chọn ghế (Step 0 trong reducer)
+  // 2: Chọn thức ăn (Step 1 trong reducer)
+  // 3: Thanh toán (Step 2 trong reducer)
+  // 4: Xác nhận (Step 3 trong reducer)
+  const steps = [
+    { id: 0, label: "Chọn phim / Rạp / Suất", isPassedAlways: true, clickable: true },
+    { id: 1, label: "Chọn ghế", stepIdx: 0 },
+    { id: 2, label: "Chọn thức ăn", stepIdx: 1 },
+    { id: 3, label: "Thanh toán", stepIdx: 2 },
+    { id: 4, label: "Xác nhận", stepIdx: 3 },
+  ];
+
+  const handleStepClick = (step) => {
+    if (step.id === 0) {
+      history.goBack();
+    } else if (step.stepIdx !== undefined && step.stepIdx < activeStep) {
+      dispatch({ type: "SET_STEP", payload: { activeStep: step.stepIdx } });
+    }
   };
 
   return (
-    <div className={classes.root}>
-      <Stepper
-        alternativeLabel
-        activeStep={activeStep}
-        className={classes.stepper}
-        connector={<ColorlibConnector />}
-      >
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel
-              classes={{ label: classes.label }}
-              StepIconComponent={StepIcon}
+    <div
+      style={{
+        width: "100%",
+        backgroundColor: "#ffffff",
+        borderBottom: "2px solid #004b91",
+        padding: "16px 24px 12px 24px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        boxSizing: "border-box",
+        marginBottom: "2px",
+      }}
+    >
+      {/* 5 Bước Đặt Vé (Stepper) */}
+      <div style={{ display: "flex", alignItems: "center", gap: "28px", margin: "0 auto" }}>
+        {steps.map((step) => {
+          const isCurrent =
+            (step.id === 1 && activeStep === 0) ||
+            (step.id === 2 && activeStep === 1) ||
+            (step.id === 3 && activeStep === 2) ||
+            (step.id === 4 && activeStep === 3);
+
+          const isPassed =
+            step.isPassedAlways ||
+            (step.stepIdx !== undefined && step.stepIdx < activeStep);
+
+          let stepColor = "#94a3b8"; // Chưa tới lượt (xám nhạt)
+          if (isCurrent) {
+            stepColor = "#004b91"; // Đang ở bước này (xanh đậm navy)
+          } else if (isPassed) {
+            stepColor = "#0284c7"; // Đã qua rồi (xanh da trời sáng như ảnh mẫu)
+          }
+
+          return (
+            <div
+              key={step.id}
+              onClick={() => handleStepClick(step)}
+              style={{
+                position: "relative",
+                paddingBottom: "8px",
+                cursor: step.clickable || isPassed ? "pointer" : "default",
+                fontSize: "14px",
+                fontWeight: isCurrent ? "700" : isPassed ? "600" : "500",
+                color: stepColor,
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (isPassed && !isCurrent) {
+                  e.currentTarget.style.color = "#0369a1";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (isPassed && !isCurrent) {
+                  e.currentTarget.style.color = "#0284c7";
+                }
+              }}
             >
-              {label}
-            </StepLabel>
-          </Step>
-        ))}
-      </Stepper>
-      <div className={classes.account} onClick={handleUser}>
-        <img src={currentUser?.data?.image ? currentUser?.data?.image : FAKE_AVATAR} alt="avatar" className={classes.avatar} />
-        <p className={classes.hoTen}>{currentUser?.data?.name}</p>
+              {step.label}
+              {isCurrent && (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "-14px",
+                    left: "0",
+                    width: "100%",
+                    height: "3px",
+                    backgroundColor: "#004b91",
+                    borderRadius: "2px",
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
+
+      {/* Thông tin tài khoản người dùng */}
+      {currentUser && (
+        <div
+          onClick={() => history.push("/taikhoan")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            cursor: "pointer",
+            padding: "4px 10px",
+            borderRadius: "20px",
+            transition: "background-color 0.2s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f1f5f9")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+        >
+          <img
+            src={currentUser?.data?.image || "https://i.pravatar.cc/150?img=68"}
+            alt="avatar"
+            style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover" }}
+          />
+          <span style={{ fontSize: "13px", fontWeight: "600", color: "#334155" }}>
+            {currentUser?.data?.name || "Tài khoản"}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
-
-// ColorlibConnector: đường gạch ngang nối giữa các bước
-// activeStep: xác định step hiện tại
-// StepIconComponent: node làm icon đại diện, mặc định nhận vào boolean active, completed, error và number: icon để css tương ứng

@@ -11,6 +11,11 @@ const bookingApi = {
     return axiosClient.get(path);
   },
 
+  getConcessions: () => {
+    const path = `/concessions`;
+    return axiosClient.get(path);
+  },
+
   holdSeats: (data) => {
     const path = `/seats/hold-seats`;
     return axiosClient.post(path, data);

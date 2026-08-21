@@ -1,420 +1,510 @@
-import React, { useRef, useEffect, useState } from "react";
-import SeatIcon from "@material-ui/icons/CallToActionRounded";
-import { useSelector, useDispatch } from "react-redux";
-import Countdown from "../Countdown";
-import useStyles from "./style";
-import formatDate from "../../../utilities/formatDate";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useHistory, useParams } from "react-router-dom";
+import bookingApi from "../../../api/bookingApi";
+import theatersApi from "../../../api/theatersApi";
 import {
   CHANGE_LISTSEAT,
   SET_ALERT_OVER10,
 } from "../../../reducers/constants/BookTicket";
-import TenCumRap from "../../../components/TenCumRap";
-import { useParams } from "react-router-dom";
-import bookingApi from "../../../api/bookingApi";
-import SockJS from "sockjs-client";
-import { Stomp } from "@stomp/stompjs";
-import Swal from "sweetalert2";
 
 export default function ListSeat() {
-  const {
-    isMobile,
-    listSeat,
-    danhSachPhongVe: { thongTinPhim },
-    thongTinPhongVe,
-  } = useSelector((state) => state.bookTicketReducer);
-
-  const { currentUser } = useSelector((state) => state.authReducer);
-  const currentUserId = currentUser?.data?.id || currentUser?.id || 1;
-
-  const domToSeatElement = useRef(null);
-  const stompClientRef = useRef(null);
-  const [widthSeat, setWidthSeat] = useState(0);
-  const [soGhe, setSoGhe] = useState(1);
-  const [thongTin, setThongTin] = useState();
+  const dispatch = useDispatch();
+  const history = useHistory();
   const param = useParams();
 
+  const { listSeat, listSeatSelected } = useSelector(
+    (state) => state.bookTicketReducer
+  );
+
+  const [scheduleItem, setScheduleItem] = useState(null);
+  const [siblingSchedules, setSiblingSchedules] = useState([]);
+  const [soGhe, setSoGhe] = useState(10);
+
+  // 1. Tải thông tin Suất chiếu hiện tại
   useEffect(() => {
-    bookingApi
-      .getScheduleById(param.maLichChieu)
-      .then((response) => {
-        if (response?.data?.data) {
-          setThongTin({ data: { content: [response.data.data] } });
-        }
-      })
-      .catch(() => {
-        if (param.maPhim && param.maRap && param.ngayChieu && param.gioChieu && param.maPhong) {
-          bookingApi
-            .getLichChieuChiTietHeThong(param.maPhim, param.maRap, param.ngayChieu, param.gioChieu, param.maPhong)
-            .then((response) => {
-              setThongTin(response.data);
-            })
-            .catch(() => {});
-        }
-      });
-  }, [param.maLichChieu, param.maPhim, param.maRap, param.ngayChieu, param.gioChieu, param.maPhong]);
-
-  const scheduleItem = thongTin?.data?.content?.[0] || thongTinPhongVe?.data?.content?.[0];
-
-  const classes = useStyles({
-    modalLeftImg: scheduleItem?.movie?.smallImageURl || "/img/movies/attack-on-titan-2_1785484162552.jpg",
-    isMobile,
-    widthLabel: widthSeat / 2,
-  });
-  const dispatch = useDispatch();
-
-  // WebSocket Subscription
-  useEffect(() => {
-    let stompClient = null;
-    let socket = null;
-    try {
-      socket = new SockJS("http://localhost:8080/ws-cinema");
-      stompClient = Stomp.over(socket);
-      stompClient.debug = () => {};
-
-      stompClient.connect(
-        {},
-        () => {
-          stompClientRef.current = stompClient;
-          if (param?.maLichChieu) {
-            stompClient.send("/app/seats/register", {}, JSON.stringify({
-              scheduleId: Number(param.maLichChieu),
-              userId: Number(currentUserId)
-            }));
-
-            stompClient.subscribe(`/topic/seats/${param.maLichChieu}`, (message) => {
-              try {
-                const event = JSON.parse(message.body);
-                if (event.userId && Number(event.userId) === Number(currentUserId)) {
-                  return;
-                }
-                if (event.holdingSeatIds) {
-                  dispatch({
-                    type: "SYNC_HOLDING_SEATS",
-                    payload: { holdingSeatIds: event.holdingSeatIds },
-                  });
-                } else if (event.seatId) {
-                  dispatch({
-                    type: "UPDATE_SEAT_REALTIME",
-                    payload: { seatId: event.seatId, isOccupied: event.isOccupied },
-                  });
-                }
-              } catch (err) {
-                console.error("Error processing WS message:", err);
-              }
-            });
+    if (param.maLichChieu) {
+      bookingApi
+        .getScheduleById(param.maLichChieu)
+        .then((res) => {
+          if (res.data?.data) {
+            setScheduleItem(res.data.data);
           }
-        },
-        (err) => {
-          console.warn("WebSocket connection warning:", err);
-        }
-      );
-    } catch (e) {
-      console.warn("SockJS init error:", e);
+        })
+        .catch((err) => console.log("Lỗi tải chi tiết suất chiếu:", err));
     }
+  }, [param.maLichChieu]);
 
-    return () => {
-      if (stompClientRef.current) {
-        try {
-          stompClientRef.current.disconnect();
-        } catch (e) {}
-      }
-    };
-  }, [param?.maLichChieu, currentUserId]);
-
+  // 2. Tải danh sách các suất chiếu THỰC TẾ từ Database đúng phòng chiếu / rạp
   useEffect(() => {
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    const movieId = param.maPhim || scheduleItem?.movie?.id;
+    const branchId = param.maRap || scheduleItem?.branch?.id;
+    const dateStr = param.ngayChieu || scheduleItem?.startDate;
+    const roomId = param.maPhong || scheduleItem?.room?.id;
 
-  useEffect(() => {
-    handleResize();
-  }, [listSeat]);
+    if (movieId && branchId && dateStr) {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
 
-  const handleResize = () => {
-    setWidthSeat(domToSeatElement?.current?.offsetWidth);
+      theatersApi
+        .getLichCoPhong(movieId, branchId, dateStr, roomId || 4)
+        .then((res) => {
+          const contents = res.data?.data?.content || [];
+          const filtered = contents
+            .filter((s) => {
+              const sDate = s.startDate ? s.startDate.slice(0, 10) : "";
+              if (sDate !== dateStr) return false;
+
+              // LỌC CHÍNH XÁC THEO PHÒNG CHIẾU ĐANG CHỌN
+              if (roomId && String(s.room?.id) !== String(roomId)) {
+                return false;
+              }
+
+              // Nếu là ngày hôm nay, chỉ lấy các suất chiếu CHƯA DIỄN RA (startTime > giờ hiện tại)
+              if (sDate === todayStr && s.startTime && s.startTime <= currentTimeStr) {
+                return false;
+              }
+              return true;
+            })
+            .sort((a, b) => (a.startTime > b.startTime ? 1 : -1));
+
+          // Loại bỏ trùng lặp giờ chiếu
+          const uniqueSchedules = [];
+          const seenTimes = new Set();
+          filtered.forEach((s) => {
+            const t = s.startTime ? s.startTime.slice(0, 5) : "";
+            if (!seenTimes.has(t)) {
+              seenTimes.add(t);
+              uniqueSchedules.push(s);
+            }
+          });
+
+          setSiblingSchedules(uniqueSchedules);
+        })
+        .catch((err) => console.log("Lỗi tải suất chiếu cùng phòng:", err));
+    }
+  }, [param.maLichChieu, param.maPhim, param.maRap, param.ngayChieu, param.maPhong, scheduleItem]);
+
+  // Xử lý chuyển đổi suất chiếu khi click nút giờ
+  const handleSwitchSchedule = (sched) => {
+    const bId = sched.branch?.id || param.maRap || 1;
+    const rId = sched.room?.id || param.maPhong || 1;
+    const mId = sched.movie?.id || param.maPhim || 1;
+    const sDate = sched.startDate || param.ngayChieu || "2026-08-21";
+    const sTime = sched.startTime || "19:00:00";
+    history.push(`/datvechitiet/${sched.id}/${bId}/${mId}/${sDate}/${rId}/${sTime}`);
   };
 
-  const handleSelectedSeat = (seatSelected) => {
-    if (seatSelected.isOccupied === 1) {
-      Swal.fire({
-        title: "Ghế đã được đặt!",
-        text: "Ghế này đã có người đặt và thanh toán thành công.",
-        icon: "info",
-        confirmButtonColor: "#f26b38",
-      });
-      return;
-    }
+  // Helper kiểm tra loại ghế 100% từ Database
+  const checkSeatType = (seat) => {
+    const rawType = seat.seatType !== undefined && seat.seatType !== null ? seat.seatType : seat.type;
+    const isCouple = rawType === "COUPLE" || rawType === 2;
+    const isTriple = rawType === "TRIPLE" || rawType === 3;
+    const isVip = rawType === "VIP" || rawType === 1;
+    return { isCouple, isTriple, isVip };
+  };
 
-    if (seatSelected.isOccupied === 2) {
-      Swal.fire({
-        title: "Ghế đã bị khóa!",
-        text: "Ghế này đã có người chuyển sang trang thanh toán trước. Vui lòng chọn ghế khác.",
-        icon: "warning",
-        confirmButtonColor: "#f26b38",
-      });
-      return;
-    }
+  // Xử lý chọn / hủy chọn ghế
+  const handleSelectSeat = (seat) => {
+    if (seat.isOccupied === 1 || seat.isOccupied === 2) return;
 
-    const isNowSelected = !seatSelected.selected;
-    let newListSeat = listSeat.map((seat) => {
-      if (seatSelected.id === seat.id) {
-        return { ...seat, selected: isNowSelected };
-      }
-      return seat;
-    });
+    const isCurrentlySelected = seat.selected;
+    let nextListSeat = [];
 
-    const newListSeatSelected = newListSeat?.reduce(
-      (acc, seat) => {
-        if (seat.selected) {
-          return [...acc, seat.name || seat.label];
+    const { isCouple, isTriple } = checkSeatType(seat);
+
+    if (isTriple) {
+      // Cụm 3 ghế liền kề
+      const row = seat.name ? seat.name.slice(0, 1) : "F";
+      const colNum = parseInt(seat.name ? seat.name.slice(1) : "1", 10);
+      const groupBase = Math.floor((colNum - 1) / 3) * 3 + 1;
+      const partnerNames = [
+        `${row}${groupBase}`,
+        `${row}${groupBase + 1}`,
+        `${row}${groupBase + 2}`,
+      ];
+
+      nextListSeat = (listSeat || []).map((s) => {
+        if (partnerNames.includes(s.name) || s.id === seat.id) {
+          return { ...s, selected: !isCurrentlySelected };
         }
-        return acc;
-      },
-      []
-    );
-
-    if (newListSeatSelected.length > soGhe) {
-      dispatch({
-        type: SET_ALERT_OVER10,
+        return s;
       });
+    } else if (isCouple) {
+      // Cụm 2 ghế đôi liền kề
+      const row = seat.name ? seat.name.slice(0, 1) : "E";
+      const colNum = parseInt(seat.name ? seat.name.slice(1) : "1", 10);
+      const partnerCol = colNum % 2 === 1 ? colNum + 1 : colNum - 1;
+      const partnerName = `${row}${partnerCol}`;
+
+      nextListSeat = (listSeat || []).map((s) => {
+        if (s.id === seat.id || s.name === partnerName) {
+          return { ...s, selected: !isCurrentlySelected };
+        }
+        return s;
+      });
+    } else {
+      // Ghế đơn (Thường hoặc VIP)
+      nextListSeat = (listSeat || []).map((s) => {
+        if (s.id === seat.id) {
+          return { ...s, selected: !isCurrentlySelected };
+        }
+        return s;
+      });
+    }
+
+    const nextSelectedNames = nextListSeat
+      .filter((s) => s.selected)
+      .map((s) => s.name || s.label);
+
+    if (nextSelectedNames.length > soGhe) {
+      dispatch({ type: SET_ALERT_OVER10 });
       return;
     }
 
-    const danhSachVe = newListSeat?.reduce((acc, seat) => {
-      if (seat.selected) {
-        return [...acc, { id: seat.id }];
-      }
-      return acc;
-    }, []);
+    const danhSachVe = nextListSeat
+      .filter((s) => s.selected)
+      .map((s) => ({ id: s.id }));
 
-    const isSelectedSeat = newListSeatSelected.length > 0;
-    const basePrice = scheduleItem?.price || 95000;
-    const amount = newListSeat?.reduce((sum, seat) => {
-      if (seat.selected) {
-        const p = (seat.seatType === "VIP" || seat.type === "VIP") ? basePrice + 10000 : basePrice;
+    const basePrice = scheduleItem?.price || 75000;
+    const amount = nextListSeat
+      .filter((s) => s.selected)
+      .reduce((sum, s) => {
+        const { isCouple: c, isTriple: tr, isVip: v } = checkSeatType(s);
+        const p =
+          s.price ||
+          (tr
+            ? basePrice + 60000
+            : c
+            ? basePrice + 40000
+            : v
+            ? basePrice + 15000
+            : basePrice);
         return sum + p;
-      }
-      return sum;
-    }, 0);
+      }, 0);
 
     dispatch({
       type: CHANGE_LISTSEAT,
       payload: {
-        listSeat: newListSeat,
-        isSelectedSeat,
-        listSeatSelected: newListSeatSelected,
+        listSeat: nextListSeat,
+        isSelectedSeat: nextSelectedNames.length > 0,
+        listSeatSelected: nextSelectedNames,
         danhSachVe,
         amount,
       },
     });
   };
 
-  const color = (seat) => {
-    if (seat.selected) {
-      return "#44c020";
+  // Gom nhóm ghế theo Hàng (Row)
+  const rowsMap = {};
+  (listSeat || []).forEach((seat) => {
+    const rowChar = seat.name ? seat.name.slice(0, 1) : "A";
+    if (!rowsMap[rowChar]) {
+      rowsMap[rowChar] = [];
     }
-    if (seat.isOccupied === 1) {
-      return "#99c5ff";
-    }
-    if (seat.isOccupied === 2) {
-      return "#ec4899";
-    }
-    if (seat.seatType === "VIP" || seat.type === "VIP") {
-      return "#f7b500";
-    }
-    return "#3e515d";
-  };
+    rowsMap[rowChar].push(seat);
+  });
 
-  const handlerSoGhe = (e) => {
-    const val = Number(e.target.value);
-    setSoGhe(val > 0 ? val : 1);
-  };
+  // Sắp xếp các hàng (Từ trên xuống dưới, ví dụ F, E, D, C, B, A hoặc H->A)
+  const sortedRowKeys = Object.keys(rowsMap).sort((a, b) => (a > b ? -1 : 1));
 
   return (
-    <main className={classes.listSeat}>
-      {/* thông tin phim */}
-      <div className={classes.info_CountDown}>
-        <div className={classes.infoTheater}>
-          <img
-            src={scheduleItem?.movie?.smallImageURl || "/img/movies/attack-on-titan-2_1785484162552.jpg"}
-            alt="phim"
-            style={{ width: 70, height: 100, borderRadius: "4px", objectFit: "cover" }}
-          />
-          <div className={classes.text}>
-            <TenCumRap
-              tenCumRap={scheduleItem?.branch?.name || "WORLD CINEMA Hà Đông"}
-              giaVe={scheduleItem?.price || 95000}
-            />
-            <p className={classes.textTime}>{`${
-              scheduleItem?.startDate ? formatDate(scheduleItem.startDate).dayToday : "Hôm nay"
-            } - ${scheduleItem?.startDate || "2026-08-21"} - ${scheduleItem?.movie?.rated || "T16"}`}</p>
-          </div>
-        </div>
+    <div style={{ backgroundColor: "#ffffff", padding: "20px 24px", minHeight: "80vh" }}>
+      {/* 1. THANH ĐỔI SUẤT CHIẾU ĐỒNG BỘ 100% THEO ĐÚNG PHÒNG CHIẾU ĐANG CHỌN */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
+          borderBottom: "1px solid #f1f5f9",
+          paddingBottom: "16px",
+          marginBottom: "24px",
+        }}
+      >
+        <span style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", marginRight: "6px" }}>
+          Đổi suất chiếu
+        </span>
 
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <input
-            style={{
-              backgroundColor: "black",
-              color: "white",
-              border: "1px solid yellow",
-              width: "2.8rem",
-              height: "2.2rem",
-              fontSize: "1.4rem",
-              textAlign: "center",
-              marginRight: "6px",
-              fontWeight: 700,
-              borderRadius: "4px"
-            }}
-            value={soGhe}
-            type="number"
-            min="1"
-            max="80"
-            placeholder="Số ghế!"
-            onChange={(e) => handlerSoGhe(e)}
-          />
-          <h4
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              textAlign: "center",
-              margin: 0,
-              height: "2.2rem",
-              lineHeight: "2.2rem",
-              fontWeight: 600,
-              fontSize: "16px",
-              color: "#333"
-            }}
-          >
-            Ghế
-          </h4>
-        </div>
-
-        <div className={classes.countDown}>
-          <p className={classes.timeTitle}>Thời gian đặt giới hạn</p>
-          <Countdown />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+          {siblingSchedules.length === 0 ? (
+            <span style={{ fontSize: "13px", color: "#94a3b8", fontStyle: "italic" }}>
+              (Chỉ còn 1 suất chiếu này trong ngày)
+            </span>
+          ) : (
+            siblingSchedules.map((s) => {
+              const isCurrent = String(s.id) === String(param.maLichChieu);
+              const timeStr = s.startTime ? s.startTime.slice(0, 5) : "";
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => handleSwitchSchedule(s)}
+                  style={{
+                    backgroundColor: isCurrent ? "#004b91" : "#ffffff",
+                    color: isCurrent ? "#ffffff" : "#1e293b",
+                    border: isCurrent ? "1px solid #004b91" : "1px solid #cbd5e1",
+                    borderRadius: "6px",
+                    padding: "6px 16px",
+                    fontSize: "13px",
+                    fontWeight: isCurrent ? "700" : "600",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    outline: "none",
+                  }}
+                >
+                  {timeStr}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
-      <div className={classes.overflowSeat}>
-        <div className={classes.invariantWidth}>
-          {/* mô phỏng màn hình */}
-          <img
-            className={classes.screen}
-            src="/img/bookticket/screen.png"
-            alt="screen"
-          />
-          {/* danh sách ghế */}
-          <div className={classes.seatSelect}>
-            {listSeat?.map((seat, i) => (
+      {/* 2. KHUNG SƠ ĐỒ GHẾ NGỒI CĂN GIỮA ĐỐI XỨNG THEO ĐÚNG DATABASE */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: "20px 0 35px 0",
+          overflowX: "auto",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "500px" }}>
+          {sortedRowKeys.map((rowKey) => {
+            const seatsInRow = rowsMap[rowKey].sort((a, b) => {
+              const numA = parseInt(a.name ? a.name.slice(1) : "0", 10);
+              const numB = parseInt(b.name ? b.name.slice(1) : "0", 10);
+              return numA > numB ? -1 : 1; // Sắp xếp từ phải sang trái chuẩn rạp (6, 5, 4, 3, 2, 1)
+            });
+
+            return (
               <div
-                className={classes.seat}
-                key={seat.id}
-                ref={domToSeatElement}
+                key={rowKey}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                }}
               >
-                {/* label A B C ... đầu mỗi row */}
-                {(i === 0 || i % 16 === 0) && (
-                  <p className={classes.label}>{seat.name ? seat.name.slice(0, 1) : seat.label.slice(0, 1)}</p>
-                )}
+                {/* Tên hàng bên trái */}
+                <span
+                  style={{
+                    width: "24px",
+                    textAlign: "center",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: "#64748b",
+                    userSelect: "none",
+                  }}
+                >
+                  {rowKey}
+                </span>
 
-                {/* số ghế thứ tự của ghế khi đang chọn */}
-                {seat.selected && (
-                  <p className={classes.seatName}>
-                    {Number(seat.name ? seat.name.slice(1) : seat.label.slice(1)) < 10
-                      ? (seat.name ? seat.name.slice(1) : seat.label.slice(1))
-                      : (seat.name ? seat.name.slice(1) : seat.label.slice(1))}
-                  </p>
-                )}
+                {/* Các ô ghế trong hàng */}
+                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  {seatsInRow.map((seat) => {
+                    const isOccupied = seat.isOccupied === 1 || seat.isOccupied === 2;
+                    const isSelected = seat.selected;
+                    const { isCouple, isTriple, isVip } = checkSeatType(seat);
 
-                {/* số ghế khi còn trống */}
-                {seat.isOccupied === 0 && !seat.selected && (
-                  <p className={classes.seatName}>
-                    {Number(seat.name ? seat.name.slice(1) : seat.label.slice(1)) < 10
-                      ? (seat.name ? seat.name.slice(1) : seat.label.slice(1))
-                      : (seat.name ? seat.name.slice(1) : seat.label.slice(1))}
-                  </p>
-                )}
+                    const seatNum = seat.name ? seat.name.slice(1) : seat.label;
 
-                {/* label ghế đã có người đặt */}
-                {seat.isOccupied === 1 && !seat.selected && (
-                  <img
-                    className={classes.seatLocked}
-                    src="/img/bookticket/notchoose.png"
-                    alt="notchoose"
-                  />
-                )}
+                    // Xác định màu nền & viền THEO ĐÚNG DỮ LIỆU DATABASE
+                    let bg = "#ffffff";
+                    let border = "1px solid #cbd5e1";
+                    let textColor = "#1e293b";
 
-                {/* label ghế đã bị khóa */}
-                {seat.isOccupied === 2 && !seat.selected && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "40%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      fontSize: "12px",
-                      zIndex: 2,
-                      userSelect: "none",
-                      pointerEvents: "none"
-                    }}
-                  >
-                    🔒
-                  </span>
-                )}
+                    if (isOccupied) {
+                      bg = "#cbd5e1";
+                      border = "1px solid #cbd5e1";
+                      textColor = "#64748b";
+                    } else if (isSelected) {
+                      bg = "#ea580c";
+                      border = "1px solid #ea580c";
+                      textColor = "#ffffff";
+                    } else if (isTriple) {
+                      bg = "#ffffff";
+                      border = "1.5px solid #ea580c"; // Viền cam ghế ba
+                      textColor = "#ea580c";
+                    } else if (isCouple) {
+                      bg = "#ffffff";
+                      border = "1.5px solid #004b91"; // Viền xanh ghế đôi
+                      textColor = "#004b91";
+                    } else if (isVip) {
+                      bg = "#ffffff";
+                      border = "1.5px solid #f59e0b"; // Viền vàng ghế VIP
+                      textColor = "#d97706";
+                    }
 
-                {/* icon ghế */}
-                <SeatIcon
-                  style={{ color: color(seat) }}
-                  className={classes.seatIcon}
-                />
+                    return (
+                      <div
+                        key={seat.id}
+                        onClick={() => handleSelectSeat(seat)}
+                        style={{
+                          width: isTriple ? "32px" : isCouple ? "32px" : "28px",
+                          height: "28px",
+                          borderRadius: isTriple || isCouple ? "6px" : "4px",
+                          backgroundColor: bg,
+                          border: border,
+                          color: textColor,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontWeight: isSelected ? "800" : "700",
+                          cursor: isOccupied ? "not-allowed" : "pointer",
+                          userSelect: "none",
+                          transition: "all 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isOccupied && !isSelected) {
+                            e.currentTarget.style.transform = "scale(1.1)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isOccupied && !isSelected) {
+                            e.currentTarget.style.transform = "scale(1)";
+                          }
+                        }}
+                      >
+                        {seatNum}
+                      </div>
+                    );
+                  })}
+                </div>
 
-                {/* vùng bắt sự kiện click */}
-                <div
-                  className={classes.areaClick}
-                  onClick={() => handleSelectedSeat(seat)}
-                  style={{ cursor: seat.isOccupied ? "not-allowed" : "pointer" }}
-                ></div>
+                {/* Tên hàng bên phải */}
+                <span
+                  style={{
+                    width: "24px",
+                    textAlign: "center",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: "#64748b",
+                    userSelect: "none",
+                  }}
+                >
+                  {rowKey}
+                </span>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+
+        {/* MÔ PHỎNG MÀN HÌNH CHIẾU */}
+        <div style={{ width: "80%", maxWidth: "600px", marginTop: "32px", textAlign: "center" }}>
+          <div
+            style={{
+              height: "3px",
+              backgroundColor: "#ea580c",
+              borderRadius: "2px",
+              marginBottom: "8px",
+            }}
+          />
+          <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: "600", letterSpacing: "1px" }}>
+            Màn hình
+          </span>
         </div>
       </div>
 
-      {/* thông tin các loại ghế */}
-      <div className={classes.noteSeat}>
-        <div className={classes.typeSeats}>
-          <div>
-            <SeatIcon style={{ color: "#3e515d", fontSize: 27 }} />
-            <p>Ghế thường</p>
-          </div>
-          <div>
-            <SeatIcon style={{ color: "#f7b500", fontSize: 27 }} />
-            <p>VIP</p>
-          </div>
-          <div>
-            <SeatIcon style={{ color: "#44c020", fontSize: 27 }} />
-            <p>Đang chọn</p>
-          </div>
-          <div>
-            <div style={{ position: "relative" }}>
-              <span className={classes.posiX} style={{ fontSize: "14px", lineHeight: 1 }}>🔒</span>
-              <SeatIcon style={{ color: "#ec4899", fontSize: 27 }} />
-            </div>
-            <p>Đã khóa</p>
-          </div>
-          <div>
-            <div style={{ position: "relative" }}>
-              <p className={classes.posiX}>x</p>
-              <SeatIcon style={{ color: "#99c5ff", fontSize: 27 }} />
-            </div>
-            <p>Đã đặt</p>
-          </div>
+      {/* 3. CHÚ THÍCH 5 TRẠNG THÁI & PHÂN LOẠI GHẾ (LEGEND) */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "24px",
+          borderTop: "1px solid #f1f5f9",
+          paddingTop: "20px",
+        }}
+      >
+        {/* Ghế đã bán */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "16px",
+              height: "16px",
+              backgroundColor: "#cbd5e1",
+              borderRadius: "3px",
+            }}
+          />
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đã bán</span>
+        </div>
+
+        {/* Ghế đang chọn */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "16px",
+              height: "16px",
+              backgroundColor: "#ea580c",
+              borderRadius: "3px",
+            }}
+          />
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đang chọn</span>
+        </div>
+
+        {/* Ghế VIP */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "16px",
+              height: "16px",
+              backgroundColor: "#ffffff",
+              border: "1.5px solid #f59e0b",
+              borderRadius: "3px",
+            }}
+          />
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế VIP</span>
+        </div>
+
+        {/* Ghế đơn */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "16px",
+              height: "16px",
+              backgroundColor: "#ffffff",
+              border: "1px solid #cbd5e1",
+              borderRadius: "3px",
+            }}
+          />
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đơn</span>
+        </div>
+
+        {/* Ghế đôi */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "28px",
+              height: "16px",
+              backgroundColor: "#ffffff",
+              border: "1.5px solid #004b91",
+              borderRadius: "4px",
+            }}
+          />
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đôi</span>
+        </div>
+
+        {/* Ghế ba */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "16px",
+              backgroundColor: "#ffffff",
+              border: "1.5px solid #ea580c",
+              borderRadius: "4px",
+            }}
+          />
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế ba</span>
         </div>
       </div>
-
-      {/* modalleft */}
-      <div className={classes.modalleft}>
-        <div className={classes.opacity}></div>
-      </div>
-    </main>
+    </div>
   );
 }

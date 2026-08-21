@@ -1,7 +1,6 @@
 import axiosClient from "./axiosClient";
 
 const branchApi = {
-
   getListBranchByAdminStaff: () => {
     const path = `/branches/getList`;
     return axiosClient.get(path);
@@ -18,7 +17,14 @@ const branchApi = {
     const path = `/schedule?movieId=${params.id}&branchId=${params.branch}&startDate=${params.date}`;
     return axiosClient.get(path);
   },
-
+  getAllCities: () => {
+    const path = `/branches/cities`;
+    return axiosClient.get(path);
+  },
+  getBranchesByCity: (city) => {
+    const path = city ? `/branches/by-city?city=${encodeURIComponent(city)}` : `/branches/by-city`;
+    return axiosClient.get(path);
+  },
 };
 
 export default branchApi;

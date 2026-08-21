@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import MovieIcon from '@material-ui/icons/Movie';
 import PeopleAltIcon from '@material-ui/icons/PeopleAlt';
 import PostAddIcon from '@material-ui/icons/PostAdd';
+import EventSeatIcon from '@material-ui/icons/EventSeat';
 import { useLocation, useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import {
@@ -50,6 +51,11 @@ const items = [
     title: 'Quản lý chi nhánh rạp'
   }, 
   {
+    href: '/admin/seat-config',
+    icon: EventSeatIcon,
+    title: 'Cấu hình sơ đồ ghế'
+  },
+  {
     href: '/admin/bills/',
     icon: PostAddIcon,
     title: 'Quản lý hóa đơn, thanh toán'
@@ -74,12 +80,6 @@ const items = [
     icon: PostAddIcon,
     title: 'Quản lý lịch chiếu'
   }, 
-  // {
-  //   href: '/admin/bills/',
-  //   icon: PostAddIcon,
-  //   title: 'Thanh toán'
-  // },
-
 ];
 
 const useStyles = makeStyles(() => ({
@@ -88,7 +88,6 @@ const useStyles = makeStyles(() => ({
   },
   desktopDrawer: {
     width: 256,
-    // top: 64,
     position:'relative',
     height: 'calc(100% - 64px)'
   },
@@ -107,15 +106,12 @@ export default function NavBar({ onMobileClose, openMobile }) {
   const [userAdmin, setUserAdmin]= useState();
   const { currentUser } = useSelector((state) => state.authReducer);
 
-  // console.log(userAdmin);
-
   useEffect(() => {
     dispatch({
       type: GET_INFO_USER_REQUEST
     })
     usersApi.getThongTinTaiKhoan()
       .then(result => {
-        // console.log("getThongTinTaiKhoan: ", result);
         setUserAdmin(result.data.data)
         dispatch({
           type: GET_INFO_USER_SUCCESS,
@@ -123,8 +119,7 @@ export default function NavBar({ onMobileClose, openMobile }) {
             data: result.data,
           }
         })
-      }
-      )
+      })
       .catch(
         error => {
           dispatch({
@@ -138,13 +133,6 @@ export default function NavBar({ onMobileClose, openMobile }) {
       )
   },[])
 
-  // useEffect(() => {
-  //   if (openMobile && onMobileClose) {
-  //     onMobileClose();
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [location.pathname]);
-
   const user = {
     avatar: userAdmin?.image,
     jobTitle: 'Quản trị viên',
@@ -155,11 +143,7 @@ export default function NavBar({ onMobileClose, openMobile }) {
     history.push("/taikhoan")
   }
 
-
-  // đây là nội dung cột bên trái
   const content = (
-
-    // cái này là div để dàn thành cột
     <Box
       height="100%"
       display="flex"
@@ -167,11 +151,9 @@ export default function NavBar({ onMobileClose, openMobile }) {
     >
       <Divider />
 
-      {/* đây là phần menu lựa chọn */}
       <Box p={2}>
         <List>
           {items?.map((item) => (
-            // NavItem hiện thị ra icon và title
             <NavItem
               href={item?.href}
               key={item?.title}
@@ -182,13 +164,11 @@ export default function NavBar({ onMobileClose, openMobile }) {
         </List>
       </Box>
 
-      {/* đây là phần logo avatar user và tên user */}
       <Box
-        // căn giữa cột
         alignItems="center"
         display="flex"
         flexDirection="column"
-        p={5} // padding 2
+        p={5}
       >
         <Tooltip title="User information">
           <Avatar
@@ -212,37 +192,20 @@ export default function NavBar({ onMobileClose, openMobile }) {
         </Typography>
       </Box>
     </Box>
-    
   );
 
   return (
     <>
-     {/* đây là giao diện mobile */}
-      {/* <Hidden lgUp>
-        <Drawer
-          anchor="left"
-          classes={{ paper: classes.mobileDrawer }}
-          onClose={onMobileClose}
-          open={openMobile} // đóng mở tùy thuộc vào bạn click
-          variant="temporary" // kiểu temporary có một lớp phủ mờ hiện ra cho đến khi bạn chọn xong thì Drawer mới đóng lại
-        >
-          {content}
-        </Drawer>
-
-      </Hidden>
-       */}
-      {/* đây là giao diện desktop */}
       <Hidden mdDown> 
         <Drawer
           anchor="left"
           classes={{ paper: classes.desktopDrawer }}
-          open // luôn luôn hiện Drawer
-          variant="persistent" // kiểu persistent không có lớp phủ mờ khi hiện drawer
+          open
+          variant="persistent"
         >
           {content}
         </Drawer>
       </Hidden>
-
     </>
   );
 };
@@ -251,11 +214,3 @@ NavBar.propTypes = {
   onMobileClose: PropTypes.func,
   openMobile: PropTypes.bool
 };
-
-// NavBar.defaultProps = {
-//   onMobileClose: () => { },
-//   openMobile: false
-// };
-
-// export default NavBar;
-

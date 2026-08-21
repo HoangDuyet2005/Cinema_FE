@@ -69,7 +69,7 @@ const useStyles = makeStyles(theme => ({
   c18: {
     marginRight: "6px",
     verticalAlign: "13%",
-    backgroundColor: "#fb4226",
+    backgroundColor: "#004b91",
     color: "#fff",
     fontSize: "16px",
     borderRadius: "4px",
@@ -114,12 +114,12 @@ const useStyles = makeStyles(theme => ({
     transition: "all .2s",
     marginTop: "12px",
     marginBottom: "10px",
-    backgroundColor: "#fb4226",
+    backgroundColor: "#004b91",
     border: "none",
     color: "#fff",
     cursor: "pointer",
     "&:hover": {
-      backgroundColor: "#b42a14",
+      backgroundColor: "#00366b",
     }
   },
   withOutImage: {

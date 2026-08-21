@@ -29,7 +29,7 @@ export default function ListSeat() {
   const domToSeatElement = useRef(null);
   const stompClientRef = useRef(null);
   const [widthSeat, setWidthSeat] = useState(0);
-  const [soGhe, setSoGhe] = useState(1);
+  const [soGhe, setSoGhe] = useState(10);
   const [thongTin, setThongTin] = useState();
   const param = useParams();
 
@@ -191,7 +191,7 @@ export default function ListSeat() {
     const basePrice = scheduleItem?.price || 95000;
     const amount = newListSeat?.reduce((sum, seat) => {
       if (seat.selected) {
-        const p = (seat.seatType === "VIP" || seat.type === "VIP") ? basePrice + 10000 : basePrice;
+        const p = seat.price || ((seat.seatType === "COUPLE" || seat.type === "COUPLE" || seat.type === 2) ? basePrice + 40000 : ((seat.seatType === "VIP" || seat.type === "VIP" || seat.type === 1) ? basePrice + 15000 : basePrice));
         return sum + p;
       }
       return sum;
@@ -219,7 +219,10 @@ export default function ListSeat() {
     if (seat.isOccupied === 2) {
       return "#ec4899";
     }
-    if (seat.seatType === "VIP" || seat.type === "VIP") {
+    if (seat.seatType === "COUPLE" || seat.type === "COUPLE" || seat.type === 2) {
+      return "#e11d48";
+    }
+    if (seat.seatType === "VIP" || seat.type === "VIP" || seat.type === 1) {
       return "#f7b500";
     }
     return "#3e515d";

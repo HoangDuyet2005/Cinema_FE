@@ -641,7 +641,7 @@ export default function ChooseByBranch() {
                 selected: classes["menu__item--selected"],
               }}
             > 
-              {suatChieu.room.name} chiếu lúc {suatChieu.startTime}
+              {suatChieu.room.name} ({suatChieu.format || suatChieu.room?.format || "2D"}) chiếu lúc {suatChieu.startTime}
             </MenuItem>
           ))}
         </Select>

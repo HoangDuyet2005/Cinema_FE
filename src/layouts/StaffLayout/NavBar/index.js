@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import MovieIcon from '@material-ui/icons/Movie';
 import PeopleAltIcon from '@material-ui/icons/PeopleAlt';
 import PostAddIcon from '@material-ui/icons/PostAdd';
+import EventSeatIcon from '@material-ui/icons/EventSeat';
 import { useLocation, useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import {
@@ -40,6 +41,16 @@ const items = [
     title: 'Quản lý chi nhánh rạp'
   },
   {
+    href: '/staff/seat-config',
+    icon: EventSeatIcon,
+    title: 'Cấu hình sơ đồ ghế'
+  },
+  {
+    href: '/staff/bills',
+    icon: PostAddIcon,
+    title: 'Quản lý hóa đơn, thanh toán'
+  },
+  {
     href: '/staff/reviews',
     icon: PostAddIcon,
     title: 'Quản lý Review'
@@ -55,16 +66,6 @@ const items = [
     title: 'Quản lý vé'
   },
   {
-    href: '/staff/bills/',
-    icon: PostAddIcon,
-    title: 'Quản lý hóa đơn, thanh toán'
-  },
-  {
-    href: '/staff/book/',
-    icon: PostAddIcon,
-    title: 'Đặt cho người dùng'
-  },
-  {
     href: '/staff/showtimes',
     icon: PostAddIcon,
     title: 'Quản lý lịch chiếu'
@@ -77,9 +78,7 @@ const useStyles = makeStyles(() => ({
   },
   desktopDrawer: {
     width: 256,
-    // top: 64,
     position:'relative',
-    
     height: 'calc(100% - 64px)'
   },
   avatar: {
@@ -94,7 +93,7 @@ export default function NavBar({ onMobileClose, openMobile }) {
   const location = useLocation();
   const history = useHistory();
   const dispatch = useDispatch();
-  const [userStaff, setUserStaff]= useState();
+  const [userAdmin, setUserAdmin]= useState();
   const { currentUser } = useSelector((state) => state.authReducer);
 
   useEffect(() => {
@@ -103,16 +102,14 @@ export default function NavBar({ onMobileClose, openMobile }) {
     })
     usersApi.getThongTinTaiKhoan()
       .then(result => {
-        // console.log("getThongTinTaiKhoan: ", result);
-        setUserStaff(result.data.data)
+        setUserAdmin(result.data.data)
         dispatch({
           type: GET_INFO_USER_SUCCESS,
           payload: {
             data: result.data,
           }
         })
-      }
-      )
+      })
       .catch(
         error => {
           dispatch({
@@ -121,50 +118,52 @@ export default function NavBar({ onMobileClose, openMobile }) {
               error: error.response?.data?.data ? error.response.data?.data : error.message,
             }
           })
+          return null;
         }
       )
   },[])
 
-  useEffect(() => {
-    if (openMobile && onMobileClose) {
-      onMobileClose();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
-
   const user = {
-    avatar: userStaff?.image,
+    avatar: userAdmin?.image,
     jobTitle: 'Nhân viên',
-    name: userStaff?.name,
+    name: userAdmin?.name,
   };
 
   const handleUser = () => {
     history.push("/taikhoan")
   }
 
-
-  // đây là nội dung cột bên trái
   const content = (
-
-    // cái này là div để dàn thành cột
     <Box
       height="100%"
       display="flex"
       flexDirection="column"
     >
       <Divider />
-{/* đây là phần logo avatar user và tên user */}
+
+      <Box p={2}>
+        <List>
+          {items?.map((item) => (
+            <NavItem
+              href={item?.href}
+              key={item?.title}
+              title={item?.title}
+              icon={item?.icon}
+            />
+          ))}
+        </List>
+      </Box>
+
       <Box
-        // căn giữa cột
         alignItems="center"
         display="flex"
         flexDirection="column"
-        p={3} // padding 2
+        p={5}
       >
         <Tooltip title="User information">
           <Avatar
             className={classes.avatar}
-            src={user.avatar}
+            src={user?.avatar}
             onClick={handleUser}
           />
         </Tooltip>
@@ -173,61 +172,30 @@ export default function NavBar({ onMobileClose, openMobile }) {
           color="textPrimary"
           variant="h5"
         >
-          {user.name}
+          {user?.name}
         </Typography>
         <Typography
           color="textSecondary"
           variant="body2"
         >
-          {user.jobTitle}
+          {user?.jobTitle}
         </Typography>
       </Box>
-      {/* đây là phần menu lựa chọn */}
-      <Box p={2}>
-        <List>
-          {items.map((item) => (
-            // NavItem hiện thị ra icon và title
-            <NavItem
-              href={item.href}
-              key={item.title}
-              title={item.title}
-              // icon={item.icon}
-            />
-          ))}
-        </List>
-      </Box>
-
     </Box>
-    
   );
 
   return (
     <>
-      {/* đây là giao diện mobile */}
-      <Hidden lgUp>
-        <Drawer
-          anchor="left"
-          classes={{ paper: classes.mobileDrawer }}
-          onClose={onMobileClose}
-          open={openMobile} // đóng mở tùy thuộc vào bạn click
-          variant="temporary" // kiểu temporary có một lớp phủ mờ hiện ra cho đến khi bạn chọn xong thì Drawer mới đóng lại
-        >
-          {content}
-        </Drawer>
-
-      </Hidden>
-      {/* đây là giao diện desktop */}
-      <Hidden mdDown>
+      <Hidden mdDown> 
         <Drawer
           anchor="left"
           classes={{ paper: classes.desktopDrawer }}
-          open // luôn luôn hiện Drawer
-          variant="persistent" // kiểu persistent không có lớp phủ mờ khi hiện drawer
+          open
+          variant="persistent"
         >
           {content}
         </Drawer>
       </Hidden>
-
     </>
   );
 };
@@ -236,11 +204,3 @@ NavBar.propTypes = {
   onMobileClose: PropTypes.func,
   openMobile: PropTypes.bool
 };
-
-NavBar.defaultProps = {
-  onMobileClose: () => { },
-  openMobile: false
-};
-
-// export default NavBar;
-

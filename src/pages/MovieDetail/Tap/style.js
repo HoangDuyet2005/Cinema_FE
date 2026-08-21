@@ -4,7 +4,7 @@ import { customScrollbar } from '../../../styles/materialUi';
 const useStyles = makeStyles(theme => ({
   root: {
     width: "100%",
-    maxWidth: 870,
+    maxWidth: 960,
     margin: "auto",
   },
   appBarRoot: {
@@ -24,7 +24,7 @@ const useStyles = makeStyles(theme => ({
     transition: "all .2s"
   },
   selectedTap: {
-    color: "#fb4226",
+    color: "#004b91",
     fontSize: 18,
   },
   noname: {
@@ -130,14 +130,14 @@ const useStyles = makeStyles(theme => ({
     float: "right",
   },
   btnDang: {
-    backgroundColor: '#fb4226',
-    borderColor: '#fb4226',
+    backgroundColor: '#004b91',
+    borderColor: '#004b91',
     color: "#fff",
     padding: "7px 25px",
     margin: "0px 0px 7px 0px",
     '&:hover': {
-      backgroundColor: '#fb4226',
-      borderColor: '#fb4226',
+      backgroundColor: '#004b91',
+      borderColor: '#004b91',
     },
   },
   dialogContent: {
@@ -167,8 +167,8 @@ const useStyles = makeStyles(theme => ({
         borderColor: "rgba(0, 0, 0, 0.23)",
       },
       '&.Mui-focused fieldset': {
-        borderColor: '#fb4226',
-        boxShadow: "inset 0 1px 1px rgb(0 0 0 / 8%), 0 0 8px rgb(251 66 38 / 60%)",
+        borderColor: '#004b91',
+        boxShadow: "inset 0 1px 1px rgb(0 0 0 / 8%), 0 0 8px rgb(0 75 145 / 40%)",
         borderWidth: 1,
 
       },
@@ -214,7 +214,7 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: "transparent",
     '&:hover': {
       backgroundColor: "#fb4226",
-      borderColor: "#fb4226",
+      borderColor: "#004b91",
       color: "#fff",
     },
     "@media (hover: none)": {
