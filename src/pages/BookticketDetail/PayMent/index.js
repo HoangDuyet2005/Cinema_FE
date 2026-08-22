@@ -53,21 +53,22 @@ export default function PayMent() {
     }
   }, [param?.maLichChieu]);
 
-  // 2. Chỉ tải chi tiết hóa đơn khi ở bước Xác nhận (activeStep === 3)
+  // 2. Tải chi tiết hóa đơn khi ở bước Xác nhận (activeStep === 3 hoặc có query ?step=confirm)
   useEffect(() => {
-    if (activeStep === 3) {
-      const bId = bookingResult?.id || bookingResult?.billId;
-      if (bId) {
-        billsApi
-          .getBillByID(bId)
-          .then((res) => {
-            if (res.data) {
-              setBillDetail(res.data);
-            }
-          })
-          .catch(() => {});
-      }
-    } else {
+    const searchParams = new URLSearchParams(window.location.search);
+    const isConfirm = activeStep === 3 || searchParams.get("step") === "confirm";
+    const bId = bookingResult?.id || bookingResult?.billId || searchParams.get("billId");
+
+    if (isConfirm && bId) {
+      billsApi
+        .getBillByID(bId)
+        .then((res) => {
+          if (res.data) {
+            setBillDetail(res.data);
+          }
+        })
+        .catch((err) => console.log("Lỗi tải bill trong PayMent sidebar:", err));
+    } else if (!isConfirm) {
       setBillDetail(null);
     }
   }, [activeStep, bookingResult]);
@@ -207,12 +208,17 @@ export default function PayMent() {
       });
   };
 
-  const isConfirmStep = activeStep === 3;
+  const searchParams = new URLSearchParams(window.location.search);
+  const isConfirmStep = activeStep === 3 || searchParams.get("step") === "confirm";
 
-  // Lấy dữ liệu ghế thực tế từ state đang chọn của người dùng
+  // Lấy dữ liệu ghế thực tế từ Database (billDetail) hoặc state đang chọn
   const currentlySelectedSeats = (listSeat || []).filter((s) => s.selected);
   const displaySeats = isConfirmStep
-    ? (billDetail?.seats && billDetail.seats.length > 0 ? billDetail.seats : currentlySelectedSeats)
+    ? (billDetail?.seats && billDetail.seats.length > 0
+        ? billDetail.seats
+        : bookingResult?.seats && bookingResult.seats.length > 0
+        ? bookingResult.seats
+        : currentlySelectedSeats)
     : currentlySelectedSeats;
 
   // Lấy dữ liệu đồ ăn thực tế
@@ -221,13 +227,22 @@ export default function PayMent() {
     : (selectedFoods || []);
 
   const totalFoodValue = displayFoods.reduce(
-    (sum, f) => sum + (f.price || 0) * (f.quantity || 1),
+    (sum, f) => sum + (Number(f.price) || 0) * (Number(f.quantity) || 1),
     0
   );
 
   const finalTotalAmount = isConfirmStep
     ? (billDetail?.price != null ? Number(billDetail.price) : Math.max(0, (amount || 0) + (foodAmount || 0) - discountAmount))
     : Math.max(0, (amount || 0) + (foodAmount || 0) - discountAmount);
+
+  // Tính tiền vé thực tế từ CSDL hóa đơn: Tổng tiền Bill - Tổng tiền bắp nước
+  const actualTicketTotal = isConfirmStep && billDetail?.price != null
+    ? Math.max(0, Number(billDetail.price) - totalFoodValue)
+    : (amount || 0);
+
+  const actualSeatPrice = displaySeats.length > 0
+    ? Math.round(actualTicketTotal / displaySeats.length)
+    : 0;
 
   const rawDate = param.ngayChieu || scheduleInfo?.startDate;
   const dateInfo = rawDate ? formatDate(rawDate) : null;
@@ -255,7 +270,7 @@ export default function PayMent() {
     ? billDetail.schedule.startTime.slice(0, 5)
     : "";
 
-  // Nhóm các ghế đã chọn theo loại ghế thực tế từ DB (VIP, ĐÔI, BA, THƯỜNG)
+  // Nhóm các ghế đã chọn theo loại ghế và lấy đúng giá từ Database
   const groupedSeats = {};
   displaySeats.forEach((s) => {
     const typeLabel = getSeatTypeLabel(s);
@@ -266,8 +281,9 @@ export default function PayMent() {
         totalPrice: 0,
       };
     }
-    groupedSeats[typeLabel].seats.push(s);
-    groupedSeats[typeLabel].totalPrice += (s.price || 0);
+    const p = (s.price != null && Number(s.price) > 0) ? Number(s.price) : actualSeatPrice;
+    groupedSeats[typeLabel].seats.push({ ...s, price: p });
+    groupedSeats[typeLabel].totalPrice += p;
   });
   const seatGroups = Object.values(groupedSeats);
 

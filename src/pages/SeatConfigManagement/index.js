@@ -229,9 +229,7 @@ export default function SeatConfigManagement() {
         <h1 style={{ fontSize: "24px", fontWeight: "800", color: "#0f172a", margin: "0 0 8px 0" }}>
           QUẢN LÝ & CẤU HÌNH SƠ ĐỒ GHẾ PHÒNG CHIẾU
         </h1>
-        <p style={{ color: "#64748b", fontSize: "14px", margin: 0 }}>
-          Tùy chỉnh ma trận ghế và đồng bộ trực tiếp với Database (Ghế Thường, Ghế VIP, Ghế Đôi, Ghế Ba).
-        </p>
+
       </div>
 
       {/* 1. Bộ Chọn Chi Nhánh & Phòng Chiếu & Các Nút Mẫu Preset */}

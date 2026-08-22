@@ -82,6 +82,19 @@ export default function ResultBookticket() {
       ? Number(billDetail.price)
       : (amount || 0) + (foodAmount || 0);
 
+  const totalFoodPrice = displayFoods.reduce(
+    (sum, f) => sum + (Number(f.price) || 0) * (Number(f.quantity) || 1),
+    0
+  );
+
+  const seatCount = displaySeats.length > 0 ? displaySeats.length : 1;
+  const totalTicketPrice = displaySeats.reduce(
+    (sum, s) => sum + (typeof s === 'object' && s.price ? Number(s.price) : 0),
+    0
+  ) || (amount > 0 ? amount : finalAmount > totalFoodPrice ? finalAmount - totalFoodPrice : 0);
+
+  const unitTicketPrice = Math.round(totalTicketPrice / seatCount);
+
   const movieObj = scheduleInfo?.movie || billDetail?.schedule?.movie;
   const branchObj = scheduleInfo?.branch || billDetail?.schedule?.branch;
   const roomObj = scheduleInfo?.room || billDetail?.schedule?.room;
@@ -203,28 +216,56 @@ export default function ResultBookticket() {
           </div>
         </div>
 
-        {/* Ghế đã đặt */}
+        {/* Ghế & Giá vé đã đặt */}
         {displaySeats.length > 0 && (
           <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "14px", marginBottom: "14px" }}>
-            <div style={{ fontSize: "13px", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
-              Ghế đã đặt:
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}>
+                Vé xem phim & Ghế ngồi ({displaySeats.length} vé):
+              </div>
+              <div style={{ fontSize: "14px", fontWeight: "800", color: "#ea580c" }}>
+                {totalTicketPrice.toLocaleString("vi-VN")} đ
+              </div>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {displaySeats.map((seat) => (
-                <span
-                  key={seat}
-                  style={{
-                    backgroundColor: "#ea580c",
-                    color: "#ffffff",
-                    padding: "4px 12px",
-                    borderRadius: "6px",
-                    fontWeight: "800",
-                    fontSize: "13px",
-                  }}
-                >
-                  Ghế {seat}
-                </span>
-              ))}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "6px" }}>
+              {displaySeats.map((seatObj, idx) => {
+                const seatName = typeof seatObj === 'string' ? seatObj : seatObj?.name || seatObj?.label || (idx + 1);
+                const sPrice = typeof seatObj === 'object' && seatObj?.price ? Number(seatObj.price) : unitTicketPrice;
+                return (
+                  <span
+                    key={idx}
+                    style={{
+                      backgroundColor: "#fff7ed",
+                      color: "#ea580c",
+                      border: "1px solid #fed7aa",
+                      padding: "4px 10px",
+                      borderRadius: "6px",
+                      fontWeight: "700",
+                      fontSize: "13px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        backgroundColor: "#ea580c",
+                        color: "#ffffff",
+                        padding: "1px 6px",
+                        borderRadius: "4px",
+                        fontSize: "11px",
+                        fontWeight: "800",
+                      }}
+                    >
+                      Ghế {seatName}
+                    </span>
+                    {sPrice > 0 && <span>{sPrice.toLocaleString("vi-VN")} đ</span>}
+                  </span>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: "12px", color: "#64748b" }}>
+              • Đơn giá: {unitTicketPrice.toLocaleString("vi-VN")} đ/vé × {displaySeats.length} vé
             </div>
           </div>
         )}
@@ -232,8 +273,13 @@ export default function ResultBookticket() {
         {/* Combo bắp nước đã đặt (lưu từ bill_food) */}
         {displayFoods && displayFoods.length > 0 && (
           <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "14px", marginBottom: "14px" }}>
-            <div style={{ fontSize: "13px", fontWeight: "700", color: "#334155", marginBottom: "8px" }}>
-              Bắp nước & Combo ({displayFoods.length} sản phẩm):
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#334155" }}>
+                Bắp nước & Combo ({displayFoods.length} sản phẩm):
+              </div>
+              <div style={{ fontSize: "14px", fontWeight: "800", color: "#ea580c" }}>
+                {totalFoodPrice.toLocaleString("vi-VN")} đ
+              </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {displayFoods.map((f, idx) => (
@@ -247,7 +293,7 @@ export default function ResultBookticket() {
                   }}
                 >
                   <span>
-                    • {f.quantity || 1}x {f.foodName || f.name}
+                    • {f.quantity || 1}x {f.foodName || f.name} ({((f.price || 0)).toLocaleString("vi-VN")} đ/phần)
                   </span>
                   <b>{((f.price || 0) * (f.quantity || 1)).toLocaleString("vi-VN")} đ</b>
                 </div>
@@ -256,15 +302,25 @@ export default function ResultBookticket() {
           </div>
         )}
 
-        {/* Tổng tiền & Cổng thanh toán */}
+        {/* Bóc tách tổng tiền & Cổng thanh toán */}
         <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "14px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "14px" }}>
-            <span style={{ color: "#64748b" }}>Tổng tiền thanh toán:</span>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "13px", color: "#475569" }}>
+            <span>Tiền vé ({displaySeats.length} vé):</span>
+            <b>{totalTicketPrice.toLocaleString("vi-VN")} đ</b>
+          </div>
+          {displayFoods && displayFoods.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "13px", color: "#475569" }}>
+              <span>Tiền bắp nước ({displayFoods.length} món):</span>
+              <b>{totalFoodPrice.toLocaleString("vi-VN")} đ</b>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed #cbd5e1", fontSize: "14px" }}>
+            <span style={{ fontWeight: "700", color: "#1e293b" }}>Tổng tiền thanh toán:</span>
             <span style={{ fontWeight: "900", color: "#ea580c", fontSize: "18px" }}>
               {finalAmount.toLocaleString("vi-VN")} đ
             </span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#64748b" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#64748b", marginTop: "6px" }}>
             <span>Cổng thanh toán:</span>
             <span style={{ fontWeight: "700", color: "#1e293b" }}>{paymentMethod || "VNPay"}</span>
           </div>
