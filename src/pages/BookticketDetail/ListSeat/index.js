@@ -5,7 +5,6 @@ import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
 import Swal from "sweetalert2";
 import bookingApi from "../../../api/bookingApi";
-import theatersApi from "../../../api/theatersApi";
 import {
   CHANGE_LISTSEAT,
   SET_ALERT_OVER10,
@@ -27,7 +26,7 @@ export default function ListSeat() {
   const [soGhe, setSoGhe] = useState(10);
   const stompClientRef = useRef(null);
 
-  // 1. Tải thông tin Suất chiếu hiện tại
+  // 1. Tải thông tin Suất chiếu hiện tại từ Database
   useEffect(() => {
     if (param.maLichChieu) {
       bookingApi
@@ -37,11 +36,39 @@ export default function ListSeat() {
             setScheduleItem(res.data.data);
           }
         })
-        .catch((err) => console.log("Lỗi tải chi tiết suất chiếu:", err));
+        .catch((err) => console.log("Lỗi tải thông tin lịch chiếu:", err));
     }
   }, [param.maLichChieu]);
 
-  // 2. Kết nối WebSocket Realtime để đồng bộ khóa ghế tức thì giữa các người dùng
+  // 2. Tải danh sách các suất chiếu THỰC TẾ cùng phim, cùng rạp, cùng ngày từ Database
+  useEffect(() => {
+    const movieId = param.maPhim || scheduleItem?.movie?.id;
+    const branchId = param.maRap || scheduleItem?.branch?.id;
+    const dateStr = param.ngayChieu || scheduleItem?.startDate;
+
+    if (movieId && branchId && dateStr) {
+      bookingApi
+        .getSchedules({ movieId, branchId, startDate: dateStr })
+        .then((res) => {
+          const list = res.data?.data || res.data || [];
+          if (Array.isArray(list)) {
+            // Lọc chính xác cùng phim, cùng rạp, cùng ngày
+            const filtered = list
+              .filter(
+                (s) =>
+                  Number(s.movie?.id || s.movieId) === Number(movieId) &&
+                  Number(s.branch?.id || s.branchId) === Number(branchId) &&
+                  s.startDate === dateStr
+              )
+              .sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
+            setSiblingSchedules(filtered);
+          }
+        })
+        .catch((err) => console.log("Lỗi tải danh sách suất chiếu:", err));
+    }
+  }, [param.maPhim, param.maRap, param.ngayChieu, scheduleItem]);
+
+  // 3. Kết nối WebSocket Realtime để đồng bộ khóa ghế tức thì giữa các người dùng
   useEffect(() => {
     let stompClient = null;
     let socket = null;
@@ -97,8 +124,8 @@ export default function ListSeat() {
             );
           }
         },
-        (err) => {
-          console.warn("Cảnh báo kết nối WebSocket:", err);
+        (error) => {
+          console.warn("WebSocket kết nối thất bại:", error);
         }
       );
     } catch (e) {
@@ -114,94 +141,65 @@ export default function ListSeat() {
     };
   }, [param?.maLichChieu, currentUserId, dispatch]);
 
-  // 3. Tải danh sách các suất chiếu THỰC TẾ từ Database đúng phòng chiếu / rạp
-  useEffect(() => {
-    const movieId = param.maPhim || scheduleItem?.movie?.id;
-    const branchId = param.maRap || scheduleItem?.branch?.id;
-    const dateStr = param.ngayChieu || scheduleItem?.startDate;
-    const roomId = param.maPhong || scheduleItem?.room?.id;
-
-    if (movieId && branchId && dateStr) {
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
-
-      theatersApi
-        .getLichCoPhong(movieId, branchId, dateStr, roomId || 4)
-        .then((res) => {
-          const contents = res.data?.data?.content || [];
-          const filtered = contents
-            .filter((s) => {
-              const sDate = s.startDate ? s.startDate.slice(0, 10) : "";
-              if (sDate !== dateStr) return false;
-
-              // LỌC CHÍNH XÁC THEO PHÒNG CHIẾU ĐANG CHỌN
-              if (roomId && String(s.room?.id) !== String(roomId)) {
-                return false;
-              }
-
-              // Nếu là ngày hôm nay, chỉ lấy các suất chiếu CHƯA DIỄN RA
-              if (sDate === todayStr && s.startTime && s.startTime <= currentTimeStr) {
-                return false;
-              }
-              return true;
-            })
-            .sort((a, b) => (a.startTime > b.startTime ? 1 : -1));
-
-          // Loại bỏ trùng lặp giờ chiếu
-          const uniqueSchedules = [];
-          const seenTimes = new Set();
-          filtered.forEach((s) => {
-            const t = s.startTime ? s.startTime.slice(0, 5) : "";
-            if (!seenTimes.has(t)) {
-              seenTimes.add(t);
-              uniqueSchedules.push(s);
-            }
-          });
-
-          setSiblingSchedules(uniqueSchedules);
-        })
-        .catch((err) => console.log("Lỗi tải suất chiếu cùng phòng:", err));
-    }
-  }, [param.maLichChieu, param.maPhim, param.maRap, param.ngayChieu, param.maPhong, scheduleItem]);
-
-  // Xử lý chuyển đổi suất chiếu khi click nút giờ
-  const handleSwitchSchedule = (sched) => {
-    const bId = sched.branch?.id || param.maRap || 1;
-    const rId = sched.room?.id || param.maPhong || 1;
-    const mId = sched.movie?.id || param.maPhim || 1;
-    const sDate = sched.startDate || param.ngayChieu || "2026-08-21";
-    const sTime = sched.startTime || "19:00:00";
-    history.push(`/datvechitiet/${sched.id}/${bId}/${mId}/${sDate}/${rId}/${sTime}`);
-  };
-
-  // Helper kiểm tra loại ghế 100% từ Database
+  // Helper kiểm tra loại ghế 100% từ Database (NORMAL, VIP, COUPLE, TRIPLE)
   const checkSeatType = (seat) => {
-    const type = seat.seatType || seat.type;
-    const isCouple =
-      type === "COUPLE" ||
-      type === 2 ||
-      (seat.name && (seat.name.startsWith("E") || seat.name.startsWith("G")));
-
-    const isTriple =
-      type === "TRIPLE" ||
-      type === 3 ||
-      (seat.name && seat.name.startsWith("F"));
-
-    const isVip =
-      type === "VIP" ||
-      type === 1 ||
-      (seat.name && (seat.name.startsWith("C") || seat.name.startsWith("D")));
-
+    const type = seat?.type !== undefined ? seat.type : seat?.seatType;
+    const isCouple = type === "COUPLE" || type === 2;
+    const isTriple = type === "TRIPLE" || type === 3;
+    const isVip = type === "VIP" || type === 1;
     return { isCouple, isTriple, isVip };
   };
 
-  // Chọn ghế
-  const handleSelectSeat = (seatSelected) => {
-    if (seatSelected.isOccupied === 1 || seatSelected.isOccupied === 2) {
+  // Chọn ghế (Tự động chọn 2 ghế cho Ghế Đôi, 3 ghế cho Ghế Ba, 1 ghế cho VIP/Thường)
+  const handleSelectSeat = (seatSelected, seatsInRow) => {
+    const { isCouple, isTriple } = checkSeatType(seatSelected);
+
+    // 1. Xác định các ghế đi liền nhau trong cụm
+    let targetSeats = [seatSelected];
+
+    if (isCouple && seatsInRow) {
+      const coupleSeatsInRow = seatsInRow
+        .filter((s) => checkSeatType(s).isCouple)
+        .sort((a, b) => {
+          const numA = parseInt((a.name || a.label || "0").slice(1), 10) || 0;
+          const numB = parseInt((b.name || b.label || "0").slice(1), 10) || 0;
+          return numA - numB; // 1, 2, 3, 4...
+        });
+
+      const idx = coupleSeatsInRow.findIndex((s) => s.id === seatSelected.id);
+      if (idx !== -1) {
+        if (idx % 2 === 0) {
+          targetSeats = [coupleSeatsInRow[idx], coupleSeatsInRow[idx + 1]].filter(Boolean);
+        } else {
+          targetSeats = [coupleSeatsInRow[idx - 1], coupleSeatsInRow[idx]].filter(Boolean);
+        }
+      }
+    } else if (isTriple && seatsInRow) {
+      const tripleSeatsInRow = seatsInRow
+        .filter((s) => checkSeatType(s).isTriple)
+        .sort((a, b) => {
+          const numA = parseInt((a.name || a.label || "0").slice(1), 10) || 0;
+          const numB = parseInt((b.name || b.label || "0").slice(1), 10) || 0;
+          return numA - numB;
+        });
+
+      const idx = tripleSeatsInRow.findIndex((s) => s.id === seatSelected.id);
+      if (idx !== -1) {
+        const baseIdx = Math.floor(idx / 3) * 3;
+        targetSeats = [
+          tripleSeatsInRow[baseIdx],
+          tripleSeatsInRow[baseIdx + 1],
+          tripleSeatsInRow[baseIdx + 2],
+        ].filter(Boolean);
+      }
+    }
+
+    // 2. Kiểm tra xem trong cụm ghế có ghế nào đã bị khóa / bán không
+    const hasOccupied = targetSeats.some((s) => s.isOccupied === 1 || s.isOccupied === 2);
+    if (hasOccupied) {
       Swal.fire({
         title: "Ghế không khả dụng!",
-        text: `Ghế ${seatSelected.name || seatSelected.label} đã có người đặt hoặc đang được người khác giữ chỗ!`,
+        text: `Cụm ghế bạn chọn đã có người đặt hoặc đang được giữ chỗ!`,
         icon: "warning",
         confirmButtonColor: "#ea580c",
       });
@@ -209,19 +207,101 @@ export default function ListSeat() {
     }
 
     const isCurrentlySelected = seatSelected.selected;
+    const targetSeatIds = targetSeats.map((s) => s.id);
     const currentlySelectedCount = listSeatSelected?.length || 0;
 
-    if (!isCurrentlySelected && currentlySelectedCount >= soGhe) {
+    if (!isCurrentlySelected && currentlySelectedCount + targetSeats.length > soGhe) {
       dispatch({ type: SET_ALERT_OVER10 });
       return;
     }
 
+    // 3. Tính toán danh sách ghế mới sau khi toggle
     const updatedList = listSeat.map((s) => {
-      if (s.id === seatSelected.id) {
+      if (targetSeatIds.includes(s.id)) {
         return { ...s, selected: !isCurrentlySelected };
       }
       return s;
     });
+
+    // 4. KIỂM TRA QUY TẮC KHÔNG ĐỂ LẠI GHẾ TRỐNG ĐƠN ĐỘC Ở 2 MÉP (ORPHAN SEAT GAP RULE)
+    if (!isCurrentlySelected && seatsInRow && seatsInRow.length > 0) {
+      const sortedRowSeats = [...seatsInRow].sort((a, b) => {
+        const numA = parseInt((a.name || a.label || "0").slice(1), 10) || 0;
+        const numB = parseInt((b.name || b.label || "0").slice(1), 10) || 0;
+        return numA - numB; // 1, 2, 3... N
+      });
+
+      const totalSeatsInRow = sortedRowSeats.length;
+
+      // Trạng thái ghế trong hàng sau khi chọn (true: đã chọn hoặc đã mua; false: còn trống)
+      const seatStates = sortedRowSeats.map((s) => {
+        const matchingUpdated = updatedList.find((u) => u.id === s.id);
+        return Boolean(matchingUpdated?.selected || s.isOccupied === 1 || s.isOccupied === 2);
+      });
+
+      if (isCouple) {
+        // Hàng ghế Đôi: Tuyệt đối không để lẻ 1 ghế đơn trong cặp
+        const coupleSeats = sortedRowSeats.filter((s) => checkSeatType(s).isCouple);
+        for (let i = 0; i < coupleSeats.length; i += 2) {
+          const s1 = updatedList.find((u) => u.id === coupleSeats[i]?.id);
+          const s2 = updatedList.find((u) => u.id === coupleSeats[i + 1]?.id);
+          const sel1 = s1?.selected || s1?.isOccupied === 1 || s1?.isOccupied === 2;
+          const sel2 = s2?.selected || s2?.isOccupied === 1 || s2?.isOccupied === 2;
+
+          if ((sel1 && !sel2) || (!sel1 && sel2)) {
+            Swal.fire({
+              title: "Quy tắc chọn ghế đôi",
+              text: "Ghế đôi phải được đặt trọn vẹn theo cặp 2 ghế, không để thừa lại 1 ghế đơn lẻ!",
+              icon: "warning",
+              confirmButtonColor: "#ea580c",
+            });
+            return;
+          }
+        }
+      } else if (isTriple) {
+        // Hàng ghế Ba: Tuyệt đối không để lẻ 1 hoặc 2 ghế trong cụm
+        const tripleSeats = sortedRowSeats.filter((s) => checkSeatType(s).isTriple);
+        for (let i = 0; i < tripleSeats.length; i += 3) {
+          const s1 = updatedList.find((u) => u.id === tripleSeats[i]?.id);
+          const s2 = updatedList.find((u) => u.id === tripleSeats[i + 1]?.id);
+          const s3 = updatedList.find((u) => u.id === tripleSeats[i + 2]?.id);
+          const selCount = [s1, s2, s3].filter(
+            (s) => s?.selected || s?.isOccupied === 1 || s?.isOccupied === 2
+          ).length;
+
+          if (selCount > 0 && selCount < 3) {
+            Swal.fire({
+              title: "Quy tắc chọn ghế ba",
+              text: "Ghế ba phải được đặt trọn vẹn theo cụm 3 ghế, không để thừa lại ghế trống lẻ!",
+              icon: "warning",
+              confirmButtonColor: "#ea580c",
+            });
+            return;
+          }
+        }
+      } else {
+        // Hàng ghế Thường / VIP: Không để lại 1 ghế trống đơn độc ở mép đầu/cuối hàng
+        if (!seatStates[0] && seatStates[1]) {
+          Swal.fire({
+            title: "Không được để trống ghế đầu hàng!",
+            text: `Không được để lại 1 ghế trống đơn độc (${sortedRowSeats[0].name || sortedRowSeats[0].label}) ở đầu hàng! Vui lòng chọn ghế liền kề.`,
+            icon: "warning",
+            confirmButtonColor: "#ea580c",
+          });
+          return;
+        }
+
+        if (!seatStates[totalSeatsInRow - 1] && seatStates[totalSeatsInRow - 2]) {
+          Swal.fire({
+            title: "Không được để trống ghế cuối hàng!",
+            text: `Không được để lại 1 ghế trống đơn độc (${sortedRowSeats[totalSeatsInRow - 1].name || sortedRowSeats[totalSeatsInRow - 1].label}) ở cuối hàng! Vui lòng chọn ghế liền kề.`,
+            icon: "warning",
+            confirmButtonColor: "#ea580c",
+          });
+          return;
+        }
+      }
+    }
 
     const updatedSelectedSeats = updatedList
       .filter((s) => s.selected)
@@ -261,7 +341,7 @@ export default function ListSeat() {
     });
   };
 
-  // Nhóm ghế theo hàng chữ cái (A, B, C, D, E, F...)
+  // Nhóm ghế theo hàng chữ cái (A, B, C, D, E, F, G, H...)
   const rows = {};
   (listSeat || []).forEach((seat) => {
     const rawName = seat.name || seat.label || "A01";
@@ -272,7 +352,15 @@ export default function ListSeat() {
     rows[rowChar].push(seat);
   });
 
-  const rowKeys = Object.keys(rows).sort();
+  // SẮP XẾP HÀNG GHẾ TỪ TRÊN XUỐNG DƯỚI: HÀNG CAO CẤP XA MÀN HÌNH Ở TRÊN, HÀNG A Ở DƯỚI GẦN MÀN HÌNH
+  const rowKeys = Object.keys(rows).sort((a, b) => (a > b ? -1 : 1));
+
+  // Lấy danh sách suất chiếu của đúng phòng / định dạng hiện tại từ DB
+  const currentRoomId = scheduleItem?.room?.id || Number(param.maPhong) || 1;
+  const currentRoomSchedules = siblingSchedules.filter(
+    (s) => Number(s.room?.id || s.roomId) === Number(currentRoomId)
+  );
+  const displaySchedules = currentRoomSchedules.length > 0 ? currentRoomSchedules : siblingSchedules;
 
   return (
     <div
@@ -280,47 +368,51 @@ export default function ListSeat() {
         backgroundColor: "#ffffff",
         borderRadius: "12px",
         padding: "24px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-        minHeight: "75vh",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        border: "1px solid #f1f5f9",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        gap: "24px",
       }}
     >
-      {/* 1. THANH CHỌN SUẤT CHIẾU CÙNG NGÀY & CÙNG PHÒNG */}
-      <div
-        style={{
-          borderBottom: "1px solid #f1f5f9",
-          paddingBottom: "16px",
-          marginBottom: "20px",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        <span style={{ fontSize: "13px", fontWeight: "700", color: "#475569" }}>
+      {/* 1. THANH ĐỔI SUẤT CHIẾU NHANH TRÊN ĐẦU (100% TỪ CSDL CỦA PHÒNG/ĐỊNH DẠNG NÀY) */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+        <span style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
           Đổi suất chiếu:
         </span>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {siblingSchedules.length > 0 ? (
-            siblingSchedules.map((s) => {
-              const isActive = String(s.id) === String(param.maLichChieu);
-              const timeDisplay = s.startTime ? s.startTime.slice(0, 5) : "10:45";
+          {displaySchedules && displaySchedules.length > 0 ? (
+            displaySchedules.map((item) => {
+              const isCurrent = Number(item.id) === Number(param.maLichChieu);
+              const timeDisplay = item.startTime ? item.startTime.slice(0, 5) : "10:45";
 
               return (
                 <button
-                  key={s.id}
-                  onClick={() => handleSwitchSchedule(s)}
+                  key={item.id}
+                  onClick={() => {
+                    if (!isCurrent) {
+                      const curBrId = item.branch?.id || param.maRap || scheduleItem?.branch?.id || 1;
+                      const curMovId = item.movie?.id || param.maPhim || scheduleItem?.movie?.id || 1;
+                      const curDStr = item.startDate || param.ngayChieu || scheduleItem?.startDate || "";
+                      const curRoId = item.room?.id || param.maPhong || scheduleItem?.room?.id || 1;
+                      const curTime = item.startTime;
+                      // Đường dẫn chuẩn: /datvechitiet/:maLichChieu/:maRap/:maPhim/:ngayChieu/:maPhong/:gioChieu
+                      history.push(
+                        `/datvechitiet/${item.id}/${curBrId}/${curMovId}/${curDStr}/${curRoId}/${curTime}`
+                      );
+                    }
+                  }}
                   style={{
                     padding: "6px 14px",
                     borderRadius: "6px",
-                    border: isActive ? "1.5px solid #004b91" : "1px solid #cbd5e1",
-                    backgroundColor: isActive ? "#004b91" : "#ffffff",
-                    color: isActive ? "#ffffff" : "#1e293b",
+                    border: isCurrent ? "1.5px solid #004b91" : "1px solid #cbd5e1",
+                    backgroundColor: isCurrent ? "#004b91" : "#ffffff",
+                    color: isCurrent ? "#ffffff" : "#1e293b",
                     fontSize: "13px",
-                    fontWeight: isActive ? "800" : "600",
-                    cursor: "pointer",
+                    fontWeight: isCurrent ? "800" : "500",
+                    cursor: isCurrent ? "default" : "pointer",
+                    outline: "none",
+                    boxShadow: isCurrent ? "0 2px 6px rgba(0, 75, 145, 0.3)" : "none",
                     transition: "all 0.15s ease",
                   }}
                 >
@@ -336,32 +428,33 @@ export default function ListSeat() {
                 backgroundColor: "#004b91",
                 color: "#ffffff",
                 fontSize: "13px",
-                fontWeight: "800",
+                fontWeight: "700",
               }}
             >
-              {param.gioChieu ? param.gioChieu.slice(0, 5) : "19:00"}
+              {scheduleItem?.startTime ? scheduleItem.startTime.slice(0, 5) : param.gioChieu || "10:45"}
             </span>
           )}
         </div>
       </div>
 
-      {/* 2. SƠ ĐỒ GHẾ CĂN GIỮA ĐỐI XỨNG */}
+      {/* 2. SƠ ĐỒ MA TRẬN GHẾ PHÒNG CHIẾU CĂN GIỮA ĐỐI XỨNG */}
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           width: "100%",
-          margin: "10px 0 20px 0",
+          overflowX: "auto",
+          padding: "16px 0",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: "600px" }}>
           {rowKeys.map((rowKey) => {
             const seatsInRow = rows[rowKey];
             seatsInRow.sort((a, b) => {
-              const numA = parseInt((a.name || a.label || "0").slice(1)) || 0;
-              const numB = parseInt((b.name || b.label || "0").slice(1)) || 0;
-              return numA > numB ? -1 : 1; // Sắp xếp chuẩn rạp
+              const numA = parseInt((a.name || a.label || "0").slice(1), 10) || 0;
+              const numB = parseInt((b.name || b.label || "0").slice(1), 10) || 0;
+              return numA > numB ? -1 : 1; // Sắp xếp từ số lớn về số bé (16, 15... 1)
             });
 
             return (
@@ -424,12 +517,15 @@ export default function ListSeat() {
                       textColor = "#d97706";
                     }
 
+                    // Kích thước ô ghế chuẩn hóa
+                    const seatWidth = isTriple ? "44px" : isCouple ? "36px" : "30px";
+
                     return (
                       <div
                         key={seat.id}
-                        onClick={() => handleSelectSeat(seat)}
+                        onClick={() => handleSelectSeat(seat, seatsInRow)}
                         style={{
-                          width: isTriple ? "32px" : isCouple ? "32px" : "28px",
+                          width: seatWidth,
                           height: "28px",
                           borderRadius: isTriple || isCouple ? "6px" : "4px",
                           backgroundColor: bg,
@@ -446,7 +542,7 @@ export default function ListSeat() {
                         }}
                         onMouseEnter={(e) => {
                           if (!isOccupied && !isSelected) {
-                            e.currentTarget.style.transform = "scale(1.1)";
+                            e.currentTarget.style.transform = "scale(1.08)";
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -479,7 +575,7 @@ export default function ListSeat() {
           })}
         </div>
 
-        {/* MÔ PHỎNG MÀN HÌNH CHIẾU */}
+        {/* MÔ PHỎNG MÀN HÌNH CHIẾU SÁT HÀNG A Ở DƯỚI CÙNG */}
         <div style={{ width: "80%", maxWidth: "600px", marginTop: "32px", textAlign: "center" }}>
           <div
             style={{
@@ -544,7 +640,7 @@ export default function ListSeat() {
               borderRadius: "3px",
             }}
           />
-          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế VIP</span>
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế VIP (1 người)</span>
         </div>
 
         {/* Ghế đơn */}
@@ -558,35 +654,35 @@ export default function ListSeat() {
               borderRadius: "3px",
             }}
           />
-          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đơn</span>
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đơn (1 người)</span>
         </div>
 
         {/* Ghế đôi */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
             style={{
-              width: "28px",
+              width: "36px",
               height: "16px",
               backgroundColor: "#ffffff",
               border: "1.5px solid #004b91",
               borderRadius: "4px",
             }}
           />
-          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đôi</span>
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế đôi (2 người)</span>
         </div>
 
         {/* Ghế ba */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
             style={{
-              width: "36px",
+              width: "48px",
               height: "16px",
               backgroundColor: "#ffffff",
               border: "1.5px solid #ea580c",
               borderRadius: "4px",
             }}
           />
-          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế ba</span>
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Ghế ba (3 người)</span>
         </div>
       </div>
     </div>

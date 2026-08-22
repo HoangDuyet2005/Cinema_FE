@@ -8,6 +8,14 @@ import formatDate from "../../../utilities/formatDate";
 import Countdown from "../Countdown";
 import { GET_LISTSEAT_SUCCESS } from "../../../reducers/constants/BookTicket";
 
+export const getSeatTypeLabel = (seat) => {
+  const type = seat?.type !== undefined ? seat.type : seat?.seatType;
+  if (type === "VIP" || type === 1) return "VIP";
+  if (type === "COUPLE" || type === 2) return "ĐÔI";
+  if (type === "TRIPLE" || type === 3) return "BA";
+  return "THƯỜNG";
+};
+
 export default function PayMent() {
   const history = useHistory();
   const dispatch = useDispatch();
@@ -31,32 +39,38 @@ export default function PayMent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [billDetail, setBillDetail] = useState(null);
 
-  // 1. Tải thông tin suất chiếu
+  // 1. Tải thông tin suất chiếu từ Database theo mã lịch chiếu
   useEffect(() => {
-    bookingApi
-      .getScheduleById(param.maLichChieu)
-      .then((res) => {
-        if (res.data?.data) {
-          setScheduleInfo(res.data.data);
-        }
-      })
-      .catch((err) => console.log("Lỗi tải chi tiết thanh toán:", err));
-  }, [param.maLichChieu]);
-
-  // 2. Nếu có bookingResult hoặc billId ở bước xác nhận, tải lại chi tiết từ Database
-  useEffect(() => {
-    const bId = bookingResult?.id || bookingResult?.billId;
-    if (bId) {
-      billsApi
-        .getBillByID(bId)
+    if (param?.maLichChieu) {
+      bookingApi
+        .getScheduleById(param.maLichChieu)
         .then((res) => {
-          if (res.data) {
-            setBillDetail(res.data);
+          if (res.data?.data) {
+            setScheduleInfo(res.data.data);
           }
         })
-        .catch(() => {});
+        .catch((err) => console.log("Lỗi tải chi tiết thanh toán:", err));
     }
-  }, [bookingResult]);
+  }, [param?.maLichChieu]);
+
+  // 2. Chỉ tải chi tiết hóa đơn khi ở bước Xác nhận (activeStep === 3)
+  useEffect(() => {
+    if (activeStep === 3) {
+      const bId = bookingResult?.id || bookingResult?.billId;
+      if (bId) {
+        billsApi
+          .getBillByID(bId)
+          .then((res) => {
+            if (res.data) {
+              setBillDetail(res.data);
+            }
+          })
+          .catch(() => {});
+      }
+    } else {
+      setBillDetail(null);
+    }
+  }, [activeStep, bookingResult]);
 
   // Điều hướng các bước
   const handlePrevStep = () => {
@@ -193,47 +207,69 @@ export default function PayMent() {
       });
   };
 
-  const dateInfo = formatDate(param.ngayChieu || scheduleInfo?.startDate || "2026-08-21");
-  const formattedDayStr = `${dateInfo?.dayToday || "Hôm nay"}, ${param.ngayChieu || scheduleInfo?.startDate || "22/08/2026"}`;
+  const isConfirmStep = activeStep === 3;
 
-  const movieName = scheduleInfo?.movie?.name || billDetail?.schedule?.movie?.name || "Quỷ Quyệt: Ranh Giới Vô Định";
-  const branchName = scheduleInfo?.branch?.name || billDetail?.schedule?.branch?.name || "WORLD CINEMA Hà Đông";
-  const roomName = scheduleInfo?.room?.name || billDetail?.schedule?.room?.name || "Phòng 202 (3D)";
-  const roomFormat = scheduleInfo?.room?.format || billDetail?.schedule?.room?.format || "3D";
-  const rated = scheduleInfo?.movie?.rated || billDetail?.schedule?.movie?.rated || "T16";
-  const posterUrl =
-    scheduleInfo?.movie?.smallImageURl ||
-    billDetail?.schedule?.movie?.smallImageURl ||
-    "https://i.pravatar.cc/150?img=11";
+  // Lấy dữ liệu ghế thực tế từ state đang chọn của người dùng
+  const currentlySelectedSeats = (listSeat || []).filter((s) => s.selected);
+  const displaySeats = isConfirmStep
+    ? (billDetail?.seats && billDetail.seats.length > 0 ? billDetail.seats : currentlySelectedSeats)
+    : currentlySelectedSeats;
 
-  // Lấy danh sách ghế: ưu tiên billDetail nếu đã đặt vé xong (activeStep === 3)
-  const displaySeats =
-    billDetail?.seats && billDetail.seats.length > 0
-      ? billDetail.seats
-      : (listSeat || []).filter((s) => s.selected);
+  // Lấy dữ liệu đồ ăn thực tế
+  const displayFoods = isConfirmStep
+    ? (billDetail?.foods && billDetail.foods.length > 0 ? billDetail.foods : selectedFoods || [])
+    : (selectedFoods || []);
 
-  const seatNamesStr = displaySeats.map((s) => s.name || s.label || s).join(", ");
-
-  // Lấy danh sách bắp nước: ưu tiên billDetail nếu đã đặt vé xong (activeStep === 3)
-  const displayFoods =
-    billDetail?.foods && billDetail.foods.length > 0
-      ? billDetail.foods
-      : selectedFoods || [];
-
-  const displayTotalFood = displayFoods.reduce(
+  const totalFoodValue = displayFoods.reduce(
     (sum, f) => sum + (f.price || 0) * (f.quantity || 1),
     0
   );
 
-  const finalTotalAmount =
-    billDetail?.price != null
-      ? Number(billDetail.price)
-      : Math.max(0, amount + (foodAmount || 0) - discountAmount);
+  const finalTotalAmount = isConfirmStep
+    ? (billDetail?.price != null ? Number(billDetail.price) : Math.max(0, (amount || 0) + (foodAmount || 0) - discountAmount))
+    : Math.max(0, (amount || 0) + (foodAmount || 0) - discountAmount);
 
-  const displaySeatAmount =
-    billDetail?.price != null
-      ? Number(billDetail.price) - displayTotalFood
-      : amount || 0;
+  const rawDate = param.ngayChieu || scheduleInfo?.startDate;
+  const dateInfo = rawDate ? formatDate(rawDate) : null;
+  const formattedDayStr = dateInfo?.dayToday && dateInfo?.dDMmYy
+    ? `${dateInfo.dayToday}, ${dateInfo.dDMmYy}`
+    : rawDate || "";
+
+  const movieObj = scheduleInfo?.movie || billDetail?.schedule?.movie;
+  const branchObj = scheduleInfo?.branch || billDetail?.schedule?.branch;
+  const roomObj = scheduleInfo?.room || billDetail?.schedule?.room;
+
+  const movieName = movieObj?.name || "";
+  const branchName = branchObj?.name || "";
+  const roomName = roomObj?.name || "";
+  const roomFormat = roomObj?.format || "2D";
+  const rated = movieObj?.rated || "P";
+  const posterUrl =
+    movieObj?.smallImageURl ||
+    movieObj?.largeImageURL ||
+    "/img/movies/banner_1.jpg";
+
+  const startTimeStr = scheduleInfo?.startTime
+    ? scheduleInfo.startTime.slice(0, 5)
+    : billDetail?.schedule?.startTime
+    ? billDetail.schedule.startTime.slice(0, 5)
+    : "";
+
+  // Nhóm các ghế đã chọn theo loại ghế thực tế từ DB (VIP, ĐÔI, BA, THƯỜNG)
+  const groupedSeats = {};
+  displaySeats.forEach((s) => {
+    const typeLabel = getSeatTypeLabel(s);
+    if (!groupedSeats[typeLabel]) {
+      groupedSeats[typeLabel] = {
+        typeLabel,
+        seats: [],
+        totalPrice: 0,
+      };
+    }
+    groupedSeats[typeLabel].seats.push(s);
+    groupedSeats[typeLabel].totalPrice += (s.price || 0);
+  });
+  const seatGroups = Object.values(groupedSeats);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -272,29 +308,31 @@ export default function PayMent() {
 
         <div style={{ padding: "20px 18px 24px 18px", display: "flex", flexDirection: "column" }}>
           {/* 2. POSTER VÀ THÔNG TIN PHIM */}
-          <div style={{ display: "flex", gap: "14px", alignItems: "flex-start", marginBottom: "16px" }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "16px" }}>
             <img
               src={posterUrl}
               alt="poster"
               style={{
-                width: "90px",
-                height: "135px",
+                width: "80px",
+                height: "115px",
                 objectFit: "cover",
                 borderRadius: "4px",
                 flexShrink: 0,
+                backgroundColor: "#f1f5f9",
               }}
             />
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <h3
                 style={{
-                  fontSize: "15px",
+                  fontSize: "14px",
                   fontWeight: "700",
                   color: "#1e293b",
-                  margin: "0 0 10px 0",
+                  margin: "0 0 8px 0",
                   lineHeight: "1.35",
+                  wordBreak: "break-word",
                 }}
               >
-                {movieName}
+                {movieName || "Đang tải thông tin phim..."}
               </h3>
               <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
                 <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "500" }}>
@@ -320,34 +358,54 @@ export default function PayMent() {
           {/* 3. TÊN CỤM RẠP & PHÒNG CHIẾU */}
           <div style={{ marginBottom: "6px" }}>
             <div style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b", lineHeight: "1.4" }}>
-              {branchName} - {roomName}
+              {branchName ? `${branchName} - ${roomName}` : roomName}
             </div>
-            <div style={{ fontSize: "13px", color: "#64748b", marginTop: "4px" }}>
-              Suất: <b style={{ color: "#1e293b", fontWeight: "700" }}>{scheduleInfo?.startTime ? scheduleInfo.startTime.slice(0, 5) : "10:45"}</b> - {formattedDayStr}
-            </div>
+            {startTimeStr && (
+              <div style={{ fontSize: "13px", color: "#64748b", marginTop: "4px" }}>
+                Suất: <b style={{ color: "#1e293b", fontWeight: "700" }}>{startTimeStr}</b> - {formattedDayStr}
+              </div>
+            )}
           </div>
 
-          {/* 4. CHI TIẾT GHẾ ĐÃ CHỌN */}
-          {displaySeats.length > 0 && (
+          {/* 4. CHI TIẾT CÁC LOẠI GHẾ ĐÃ CHỌN TỪ DB (VIP, ĐÔI, BA, THƯỜNG) */}
+          {seatGroups.length > 0 && (
             <>
               <div style={{ borderBottom: "1px dashed #cbd5e1", margin: "14px 0" }} />
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#1e293b", fontWeight: "700" }}>
-                  <span>
-                    {displaySeats.length}x GHẾ {displaySeats[0]?.seatType === "COUPLE" || displaySeats[0]?.seatType === 2 ? "ĐÔI" : displaySeats[0]?.seatType === "TRIPLE" || displaySeats[0]?.seatType === 3 ? "BA" : displaySeats[0]?.seatType === "VIP" || displaySeats[0]?.seatType === 1 ? "VIP" : "THƯỜNG"} {roomFormat}
-                  </span>
-                  <span>{displaySeatAmount.toLocaleString("vi-VN")} <u>đ</u></span>
-                </div>
-                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
-                  Ghế: {seatNamesStr}
-                </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {seatGroups.map((group, idx) => (
+                  <div key={idx}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "13px",
+                        color: "#1e293b",
+                        fontWeight: "700",
+                      }}
+                    >
+                      <span>
+                        {group.typeLabel === "ĐÔI"
+                          ? Math.max(1, Math.floor(group.seats.length / 2))
+                          : group.typeLabel === "BA"
+                          ? Math.max(1, Math.floor(group.seats.length / 3))
+                          : group.seats.length}x GHẾ {group.typeLabel} {roomFormat}
+                      </span>
+                      <span>
+                        {group.totalPrice.toLocaleString("vi-VN")} <u>đ</u>
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
+                      Ghế: {group.seats.map((s) => s.name || s.label || s).join(", ")}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
 
-          {/* 5. CHI TIẾT BẮP NƯỚC ĐÃ CHỌN */}
+          {/* 5. CHI TIẾT BẮP NƯỚC ĐÃ CHỌN (CHỈ HIỆN KHI NGƯỜI DÙNG ĐÃ CHỌN MÓN) */}
           {displayFoods && displayFoods.length > 0 && (
-            <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
               {displayFoods.map((f, idx) => (
                 <div
                   key={idx}
@@ -420,20 +478,20 @@ export default function PayMent() {
               {activeStep < 2 ? (
                 <button
                   onClick={handleNextStep}
-                  disabled={isProcessing || (!displaySeats || displaySeats.length === 0)}
+                  disabled={isProcessing || currentlySelectedSeats.length === 0}
                   style={{
                     padding: "10px 32px",
                     borderRadius: "6px",
                     border: "none",
                     backgroundColor:
-                      displaySeats && displaySeats.length > 0 && !isProcessing
+                      currentlySelectedSeats.length > 0 && !isProcessing
                         ? "#f97316"
                         : "#cbd5e1",
                     color: "#ffffff",
                     fontSize: "14px",
                     fontWeight: "700",
                     cursor:
-                      displaySeats && displaySeats.length > 0 && !isProcessing
+                      currentlySelectedSeats.length > 0 && !isProcessing
                         ? "pointer"
                         : "not-allowed",
                     outline: "none",
@@ -445,16 +503,22 @@ export default function PayMent() {
               ) : (
                 <button
                   onClick={handleCheckout}
-                  disabled={isProcessing}
+                  disabled={isProcessing || currentlySelectedSeats.length === 0}
                   style={{
                     padding: "10px 32px",
                     borderRadius: "6px",
                     border: "none",
-                    backgroundColor: isProcessing ? "#cbd5e1" : "#f97316",
+                    backgroundColor:
+                      isProcessing || currentlySelectedSeats.length === 0
+                        ? "#cbd5e1"
+                        : "#f97316",
                     color: "#ffffff",
                     fontSize: "14px",
                     fontWeight: "700",
-                    cursor: isProcessing ? "not-allowed" : "pointer",
+                    cursor:
+                      isProcessing || currentlySelectedSeats.length === 0
+                        ? "not-allowed"
+                        : "pointer",
                     outline: "none",
                     transition: "background-color 0.15s ease",
                   }}

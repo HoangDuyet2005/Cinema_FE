@@ -11,6 +11,11 @@ const bookingApi = {
     return axiosClient.get(path);
   },
 
+  getSchedules: (params) => {
+    const path = `/schedule`;
+    return axiosClient.get(path, { params });
+  },
+
   getConcessions: () => {
     const path = `/concessions`;
     return axiosClient.get(path);

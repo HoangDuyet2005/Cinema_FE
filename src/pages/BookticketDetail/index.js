@@ -76,7 +76,7 @@ export default function BookTicketsDetail() {
       .catch(() => {});
   }, []);
 
-  // 2. Lấy thông tin lịch chiếu đầy đủ theo mã lịch chiếu
+  // 2. Lấy thông tin lịch chiếu thực tế từ Database
   useEffect(() => {
     if (param?.maLichChieu) {
       bookingApi
@@ -202,32 +202,23 @@ export default function BookTicketsDetail() {
       return { ...s, label: s.name || txt + number, selected: false };
     });
 
-    const movieObj = scheduleData?.movie || {
-      name: "Attack on Titan: The Last Attack",
-      smallImageURl: "/img/movies/attack-on-titan-2_1785484162552.jpg",
-      duration: 145,
-      categories: "Hoạt Hình",
-      rated: "T16",
-    };
-
-    const branchObj = scheduleData?.branch || { name: "WORLD CINEMA Hà Đông" };
-    const roomObj = scheduleData?.room || { name: "Phòng 202" };
-    const startDateVal =
-      scheduleData?.startDate || param?.ngayChieu || "2026-08-21";
-    const startTimeVal =
-      scheduleData?.startTime || param?.gioChieu || "10:45:00";
-    const priceVal = scheduleData?.price || 95000;
+    const movieObj = scheduleData?.movie || null;
+    const branchObj = scheduleData?.branch || null;
+    const roomObj = scheduleData?.room || null;
+    const startDateVal = scheduleData?.startDate || param?.ngayChieu || "";
+    const startTimeVal = scheduleData?.startTime || param?.gioChieu || "";
+    const priceVal = scheduleData?.price || 0;
 
     dispatch({
       type: INIT_DATA,
       payload: {
         listSeat: danhSachGheEdit,
         maLichChieu: param?.maLichChieu,
-        hoTen: cUser?.name || currentUser?.name || "Hoàng Thế Duyệt",
-        taiKhoanNguoiDung: cUser?.id || currentUser?.id || "2",
-        email: cUser?.email || currentUser?.email || "theduyet@gmail.com",
-        phone: cUser?.phone || "0376621299",
-        name: cUser?.name || currentUser?.name || "Hoàng Thế Duyệt",
+        hoTen: cUser?.name || currentUser?.name || "Khách hàng",
+        taiKhoanNguoiDung: cUser?.id || currentUser?.id || 1,
+        email: cUser?.email || currentUser?.email || "",
+        phone: cUser?.phone || "",
+        name: cUser?.name || currentUser?.name || "Khách hàng",
         thongTinPhongVe: {
           data: {
             content: [
