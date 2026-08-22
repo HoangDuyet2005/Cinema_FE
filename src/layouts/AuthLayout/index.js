@@ -1,56 +1,84 @@
-import React from 'react'
-
+import React, { useEffect, useState } from 'react';
 import { useLocation, useHistory } from "react-router-dom";
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
-import { makeStyles } from "@material-ui/core"
+import { makeStyles } from "@material-ui/core";
 import { useDispatch } from 'react-redux';
-
 import { LOADING_BACKTO_HOME } from '../../reducers/constants/Lazy';
 
-const bgAuth = '/img/posterBG.jpg'
+const bgAuth = '/img/posterBG.jpg';
 
-const useStyles = makeStyles(theme => ({
+// Preload hình nền vào bộ nhớ trình duyệt ngay khi file được import
+if (typeof window !== "undefined") {
+  const preloadImg = new Image();
+  preloadImg.src = bgAuth;
+}
+
+const useStyles = makeStyles((theme) => ({
   backgroundImage: {
     width: '100vw',
-    height: '100vh',
+    minHeight: '100vh',
+    backgroundColor: '#881337', // Màu nền đỏ điện ảnh dự phòng tức thì loại bỏ delay
     backgroundImage: `url(${bgAuth})`,
-    backgroundSize: 'contain',
+    backgroundSize: 'cover',
     backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
     display: 'flex',
     justifyContent: 'center',
     alignItems: "center",
-
+    padding: '30px 16px',
+    transition: 'opacity 0.2s ease-in-out',
   },
   bgBlueColor: {
-    // backgroundImage: "linear-gradient(to bottom,rgba(200, 200, 0, 1),rgba(255, 67, 67,.9))",
-    backgroundColor:"#7f1002",
-    width: 700,
+    backgroundColor: "rgba(255, 255, 255, 0.22)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
+    width: '100%',
+    maxWidth: 520,
     height: "fit-content",
     [theme.breakpoints.down("sm")]: {
-      width: "100%",
-      height: "100%",
+      maxWidth: "100%",
     },
-    borderRadius: 6,
+    borderRadius: 0,
     position: "relative",
     zIndex: 1000,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "24px 16px",
+    animation: "$fadeIn 0.25s ease-out",
+  },
+  "@keyframes fadeIn": {
+    "0%": {
+      opacity: 0,
+      transform: "scale(0.96)",
+    },
+    "100%": {
+      opacity: 1,
+      transform: "scale(1)",
+    },
   },
   closeButton: {
     position: 'absolute',
-    top: 0,
-    right: 0,
-    transform: "translate(-10%,10%)",
-    border: '2px solid white',
-    [theme.breakpoints.down("sm")]: {
-      border: "none",
-      top: 19,
-      right: 24,
-    },
+    top: -16,
+    right: -16,
+    backgroundColor: "#ffffff",
+    border: '1px solid rgba(226, 232, 240, 0.8)',
+    borderRadius: "50%",
+    padding: 6,
+    color: "#1e293b",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
     '&:focus': {
       outline: 'none'
     },
-    '&:hover': { opacity: 0.5 },
-    transition: "all .2s",
+    '&:hover': {
+      backgroundColor: "#dc2626",
+      color: "#ffffff",
+      transform: "scale(1.08)",
+    },
+    transition: "all .2s ease",
   },
 }));
 
@@ -59,24 +87,26 @@ export default function AuthLayout(props) {
   let location = useLocation();
   const history = useHistory();
   const dispatch = useDispatch();
-  const handleClose = () => { // nhấn nút X
-    if (location.state?.slice(0, 5) === "/phim") { // chỉ duy nhất trang chitietphim là quay lại ngay, còn lại đều về home
-      history.push(location.state)
-      return
+
+  const handleClose = () => {
+    if (location.state?.slice(0, 5) === "/phim") {
+      history.push(location.state);
+      return;
     }
-    dispatch({ type: LOADING_BACKTO_HOME })
+    dispatch({ type: LOADING_BACKTO_HOME });
     setTimeout(() => {
-      history.push("/")
+      history.push("/");
     }, 50);
-  }
+  };
+
   return (
     <div className={classes.backgroundImage}>
       <div className={classes.bgBlueColor}>
         {props.children}
         <IconButton className={classes.closeButton} onClick={handleClose} >
-          <CloseIcon style={{ color: 'white' }} fontSize='small' />
+          <CloseIcon fontSize='small' />
         </IconButton>
       </div>
     </div>
-  )
+  );
 }
