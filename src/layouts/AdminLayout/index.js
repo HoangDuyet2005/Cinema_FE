@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import 'antd/dist/antd.css';
+import 'antd/dist/reset.css';
 import { useHistory, useLocation, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
 import ProLayout from '@ant-design/pro-layout';
