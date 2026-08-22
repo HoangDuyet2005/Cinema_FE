@@ -28,6 +28,11 @@ const theatersApi = {
     return axiosClient.post(path, schedule);
   },
 
+  getRoomsByBranch: (branchId) => {
+    const path = `/rooms/branch?branchId=${branchId}`;
+    return axiosClient.get(path);
+  },
+
   getThongTinLichChieuLe: () => {
     const path = "/schedule/getAll?page=0&size=30000";
     return axiosClient.get(path);

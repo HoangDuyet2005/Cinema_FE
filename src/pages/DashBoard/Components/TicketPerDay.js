@@ -1,62 +1,63 @@
-import React, { useEffect, useState } from 'react';
-
-import Chart, {
-  ArgumentAxis,
-  Legend,
+import React from "react";
+import {
+  Chart,
   Series,
-  ValueAxis,
-  Label,
+  ArgumentAxis,
+  CommonSeriesSettings,
   Export,
+  Legend,
+  Margin,
+  Title as ChartTitle,
+  Subtitle,
+  Tooltip,
+  Grid,
   Tick,
 } from 'devextreme-react/chart';
-import billsApi from "../../../api/billsApi"
+import { Card, Typography } from "antd";
 
+const { Title } = Typography;
 
-export default function TicketPerDay() {
-    const [data, setData] = useState({
-    })
+export default function TicketPerDay({ dashboardData }) {
+  const data = dashboardData || {};
 
-    useEffect(() => {
-        billsApi.getTicketSalePerDay()
-        .then((res) =>{
-          setData(
-            res?.data
-          )
-          console.log("Side:",data);
-        })
-        .catch((err) =>{
-          console.log(err);
-        })
-      },[])
-
-    return(
-      <>
-        <h5 style={{textAlign:"center", color: "blue", textTransform:"uppercase", fontWeight:"bold", marginTop:"1rem"}}>Số lượng giao dịch theo ngày</h5>
+  return (
+    <Card 
+      bordered={false} 
+      style={{ height: '100%', borderRadius: 8, boxShadow: '0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12)' }}
+    >
+      <Title level={5} style={{ marginBottom: 24, color: '#1890ff', textTransform: 'uppercase' }}>
+        Số lượng giao dịch theo ngày
+      </Title>
+      
+      {data?.dayTransactionReports?.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '50px 0', color: '#999' }}>Không có dữ liệu hiển thị!</div>
+      ) : (
         <Chart
-          dataSource={data?.dayTransactionReports}
-          rotated={true}
-          id="chart"
-          >
-            <ValueAxis>
-              <Tick visible={false} />
-              <Label visible={false} />
-            </ValueAxis>
-
-            <Series
-            valueField="transactionCount"
+          palette="Violet"
+          dataSource={data.dayTransactionReports || []}
+        >
+          <CommonSeriesSettings
             argumentField="dateTran"
-            type="bar"
-            color="#ad071d"
-            >
-              <Label visible={true} backgroundColor="#000" />
-            </Series>
-
-            <Legend visible={false} />
-
-            <Export enabled={true} />
-
+            type="line"
+          />
+          <Series key="transactionCount" valueField="transactionCount" name="Số lượng Giao dịch" />
+          <Margin bottom={20} />
+          <ArgumentAxis
+            valueMarginsEnabled={false}
+            discreteAxisDivisionMode="crossLabels"
+          >
+            <Grid visible={true} />
+            <Tick visible={true} />
+          </ArgumentAxis>
+          <Legend
+            verticalAlignment="bottom"
+            horizontalAlignment="center"
+            itemTextPosition="bottom"
+          />
+          <Export enabled={true} />
+          <Tooltip enabled={true} />
         </Chart>
-      </>
-           
-    )
+      )}
+    </Card>
+  );
 }

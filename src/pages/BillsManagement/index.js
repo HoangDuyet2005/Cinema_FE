@@ -1,153 +1,73 @@
 import React, { useEffect, useState, useRef } from "react";
-
-import { DataGrid, GridToolbar, GridOverlay } from "@material-ui/data-grid";
+import { ProTable } from "@ant-design/pro-components";
+import { Tag, Button as AntButton } from "antd";
 import { useSelector, useDispatch } from "react-redux";
-import Button from "@material-ui/core/Button";
 import { useSnackbar } from "notistack";
-import CircularProgress from "@material-ui/core/CircularProgress";
-import SearchIcon from "@material-ui/icons/Search";
-import InputBase from "@material-ui/core/InputBase";
-import Dialog from "@material-ui/core/Dialog";
-// import AddBoxIcon from "@material-ui/icons/AddBox";
-import RenderCellExpand from "./RenderCellExpand";
+
+import Action from "./Action";
 import slugify from "slugify";
-// import DialogActions from '@mui/material/DialogActions';
-// import Fab from "@material-ui/core/Fab";
-import useMediaQuery from "@material-ui/core/useMediaQuery";
-import RefreshButton from "../../utilities/RefreshButton"
 import DetailPopup from "./PopUp/PopUp";
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 
-
-import { useStyles, DialogContent, DialogTitle } from "./styles";
-// import {
-//   getMovieListManagement,
-//   deleteMovie,
-//   updateMovieUpload,
-//   resetMoviesManagement,
-//   updateMovie,
-//   addMovieUpload,
-// } from "../../reducers/actions/Movie";
-import Action from "./Action";
-// import ThumbnailYoutube from "./ThumbnailYoutube";
-// import Form from "./Form";
-// import FormAddEvent from "./FormAddEvent";
 import Swal from "sweetalert2";
-import { getBillsList, getBillsTTTaiQuay, postAddBill, putBillUpdate, resetBillList } from "../../reducers/actions/Bill";
-import { Tooltip } from "@material-ui/core";
-import { DialogContentText } from "@mui/material";
-import Slide from '@mui/material/Slide';
+import { getBillsTTTaiQuay } from "../../reducers/actions/Bill";
 import billsApi from "../../api/billsApi";
 import formatDate from "../../utilities/formatDate";
 import reviewsApi from "../../api/billsApi";
 
-
-// const Transition = React.forwardRef(function Transition(props, ref) {
-//   return <Slide direction="up" ref={ref} {...props} />;
-// });
-
-function CustomLoadingOverlay() {
-  return (
-    <GridOverlay>
-      <CircularProgress style={{ margin: "auto" }} />
-    </GridOverlay>
-  );
-}
-
 export default function BillsManagement() {
   const [billListDisplay, setBillListDisplay] = useState([]);
-  const [billListLoc, setBillListLoc] = useState([]);
-  // console.log("billListDisplay: ", billListDisplay);
-  const classes = useStyles();
-  const  {enqueueSnackbar}  = useSnackbar();
-  const [toggle, setToggle] = useState(false)
+  const [searchParams, setSearchParams] = useState({});
+  const { enqueueSnackbar } = useSnackbar();
+  const [toggle, setToggle] = useState(false);
 
-  let {
-    billList,
-    loadingBillList,
+  const {
     loadingDelete,
-    // errorDelete,
-    // successDelete,
-    // successUpdateBill,
-    // errorUpdateBill,
     loadingUpdateBill,
-    // loadingAddBill,
-    // successAddBill,
-    // errorAddBill,
-    // loadingUpdateNoneImageMovie,
-    // successUpdateNoneImageMovie,
-    // errorUpdateNoneImageMovie,
     billListTTTaiQuay,
     loadingBillListTTTaiQuay,
-    errorBillListTTTaiQuay,
   } = useSelector((state) => state.billsManagementReducer);
   
-  // console.log(billListTTTaiQuay);
   const dispatch = useDispatch();
-  const newImageUpdate = useRef("");
-  const callApiChangeImageSuccess = useRef(false);
-  const [valueSearch, setValueSearch] = useState("");
-  const clearSetSearch = useRef(0);
-  const [openModal, setOpenModal] = React.useState(false);
-  const selectedPhim = useRef(null);
-  const isMobile = useMediaQuery("(max-width:768px)");
-  const [listBill, setListBill] = useState([])
+
   useEffect(() => {
-    if (
-      !billListTTTaiQuay
-    ) {
-      dispatch(getBillsTTTaiQuay());
-    }
-  }, []); // khi vừa thêm phim mới xong mà xóa liên backend sẽ báo lỗi xóa không được nhưng thực chất đã xóa thành công > errorDeleteMovie nhưng vẫn tiến hành làm mới lại danh sách
-  // useEffect(() => {
-  //   return () => {
-  //     dispatch(resetBillList());
-  //   };
-  // }, []);
+    dispatch(getBillsTTTaiQuay());
+  }, [dispatch]);
+
   useEffect(() => {
-    if (billListTTTaiQuay || billListTTTaiQuay?.length) {
-      const newBillListDisplay = billListTTTaiQuay?.map((bill, index) => ({
+    if (billListTTTaiQuay && billListTTTaiQuay.length > 0) {
+      const newBillListDisplay = billListTTTaiQuay.map((bill) => ({
         ...bill,
-        hanhDong: "",
         id: bill?.id,
-        email:bill?.user?.email,
-        idUser:bill?.user?.id,
-        imageUser:bill?.user?.image,
-        nameUser:bill?.user?.name,
-        usernameUser:bill?.user?.username,
-        status:bill.status,
-        createdTime:`${formatDate(bill?.createdTime.slice(
-          0,
-          10
-        )).dateFull}, ${bill?.createdTime.slice(11, 19)}`,
+        email: bill?.user?.email,
+        idUser: bill?.user?.id,
+        imageUser: bill?.user?.image,
+        nameUser: bill?.user?.name,
+        usernameUser: bill?.user?.username,
+        status: bill.status,
+        createdTime: `${formatDate(bill?.createdTime.slice(0, 10)).dateFull}, ${bill?.createdTime.slice(11, 19)}`,
       }));
       setBillListDisplay(newBillListDisplay);
-
-      // let newBillListLoc = billList?.data?.reduce((bill) => {
-      //   if(bill?.type === "REVIEWS") {
-      //     return bill
-      //   }
-      // });
-      // setBillListLoc(newBillListLoc);
     }
+  }, [billListTTTaiQuay]);
 
-  }, []);
-  const [ticketDetail, setTicketDetail] = useState({})
+  const [ticketDetail, setTicketDetail] = useState({});
 
   const getTicketDetail = (id) => {
-    reviewsApi.getBillByID(id).then((response) => { setTicketDetail(response.data); setToggle(true) })
-  }
+    reviewsApi.getBillByID(id).then((response) => {
+      setTicketDetail(response.data);
+      setToggle(true);
+    });
+  };
 
   const handleEdit = (billItem) => {
-    selectedPhim.current = billItem;
-    // console.log(selectedPhim.current);
     const swalWithBootstrapButtons = Swal.mixin({
       customClass: {
         confirmButton: 'btn btn-success',
         cancelButton: 'btn btn-danger'
       },
       buttonsStyling: false
-    })
+    });
     
     swalWithBootstrapButtons.fire({
       title: 'Chắc chắn thanh toán?',
@@ -160,378 +80,191 @@ export default function BillsManagement() {
     }).then((result) => {
       if (result.isConfirmed) {
         if (!loadingDelete) {
-          // nếu click xóa liên tục một user
-          // dispatch(deleteMovie(maPhim));
-          // window.location.reload();
           billsApi.postThanhToan(billItem.id)
           .then((res) =>{
-            // console.log(res);
             swalWithBootstrapButtons.fire(
               'Đã thanh toán!',
-              'DONE.',
+              'Thành công.',
               'success'
-            )
+            );
+            dispatch(getBillsTTTaiQuay());
           })
           .catch((err) => {
-            // console.log(err);
             swalWithBootstrapButtons.fire(
-              'Bill đã quá hạn',
-              'Không thể thanh toán!',
+              'Lỗi thanh toán',
+              'Bill đã quá hạn hoặc có lỗi xảy ra!',
               'error'
-            )
-          })
+            );
+          });
         }
-      } else if (
-        /* Read more about handling dismissals below */
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
         swalWithBootstrapButtons.fire(
           'Đã dừng',
           'Kiểm tra thông tin và nội dung!',
           'error'
-        )
+        );
       }
-    })
-    // setOpenModal(true);
-  };
-
-  const [open, setOpen] = React.useState(false);
-
-  // const handleClickOpen = () => {
-  //   setOpen(true);
-  // };
-
-  const handleClose = (user) => {
-    setOpen(false);
-  };
-
-
-  const handleReload = () => {
-    dispatch(getBillsTTTaiQuay());
-  }
-
-  // const handleAddMovie = () => {
-  //   const emtySelectedBill = {
-  //     createdTime:"",
-  //     price:"",
-  //     status : "",
-  //     email:"",
-  //     idUser:"",
-  //     id:"",
-  //     imageUser:"",
-  //     nameUser:"",
-  //     usernameUser:""
-  //   };
-  //   selectedPhim.current = emtySelectedBill;
-  //   setOpenModal(true);
-  // };
-
-  const handleInputSearchChange = (props) => {
-    clearTimeout(clearSetSearch.current);
-    clearSetSearch.current = setTimeout(() => {
-      setValueSearch(props);
-    }, 500);
-  };
-
-  const onFilter = () => {
-    // dùng useCallback, slugify bỏ dấu tiếng việt
-    let searchBillListDisplay = billListDisplay?.filter((bill) => {
-      const matchTenPhim =
-        slugify(bill?.brief ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      const matchMoTa =
-        slugify(bill?.status ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      const matchNgayKhoiChieu =
-        slugify(bill?.type ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      return matchTenPhim || matchMoTa || matchNgayKhoiChieu;
     });
-    if (newImageUpdate.current && callApiChangeImageSuccess.current) {
-      // hiển thị hình bằng base64 thay vì url, lỗi react không hiển thị đúng hình mới cập nhật(đã cập hình thanh công nhưng url backend trả về giữ nguyên đường dẫn)
-      searchBillListDisplay = searchBillListDisplay?.map((bill) => {
-        if (bill.id === newImageUpdate.current.id) {
-          return { ...bill, smallImageURl: newImageUpdate.current.smallImageURl};
-        }
-        return bill;
-      });
-    }
-    return searchBillListDisplay;
+  };
+
+  const modifySlugify = { lower: true, locale: "vi" };
+  const getFilteredData = () => {
+    if (!billListDisplay) return [];
+    return billListDisplay.filter((bill) => {
+      const keyword = searchParams.keyword || "";
+      if (!keyword) return true;
+      const matchEmail = slugify(bill?.email ?? "", modifySlugify)?.indexOf(slugify(keyword, modifySlugify)) !== -1;
+      const matchUsername = slugify(bill?.usernameUser ?? "", modifySlugify)?.indexOf(slugify(keyword, modifySlugify)) !== -1;
+      const matchName = slugify(bill?.nameUser ?? "", modifySlugify)?.indexOf(slugify(keyword, modifySlugify)) !== -1;
+      const matchStatus = slugify(bill?.status ?? "", modifySlugify)?.indexOf(slugify(keyword, modifySlugify)) !== -1;
+      return matchEmail || matchUsername || matchName || matchStatus;
+    });
   };
 
   const columns = [
     {
-      field: "hanhDong",
-      headerName: "Thanh toán",
+      title: "Mã hóa đơn",
+      dataIndex: "id",
+      search: false,
+      width: 120,
+      sorter: (a, b) => a.id - b.id,
+    },
+    {
+      title: "Tìm kiếm",
+      dataIndex: "keyword",
+      hideInTable: true,
+      fieldProps: {
+        placeholder: "Tìm theo Username, Tên, Email...",
+      }
+    },
+    {
+      title: "Tài khoản",
+      dataIndex: "usernameUser",
+      search: false,
       width: 150,
-      // renderCell: (params) => (
-      //   <Action
-      //     onEdit={handleEdit}
-      //     // onDeleted={handleDelete}
-      //     phimItem={params.row}
-      //     // onXemQua={onXemQua}
-      //     // onTuChoi={handleTuChoi}
-      //   />
-      // ),
-      // renderCell: (params) => {
-      //   if (params.row.status === "WAITING_PAYMENT") {
-      //     return (
-      //       <Action
-      //         onEdit={handleEdit}
-      //         // onDeleted={handleDelete}
-      //         phimItem={params.row}
-      //         // onXemQua={onXemQua}
-      //         // onTuChoi={handleTuChoi}
-      //       />
-      //     );
-      //   } else if (params.row.status === "SUCCESS")
-      //   {
-      //     return "Đã thanh toán"
-      //   }
-      //   else return "Hết hạn thanh toán"
-      // },
-      renderCell: (params) => {
-        if (params.row.status === "WAITING_PAYMENT") {
+      sorter: (a, b) => (a.usernameUser || "").localeCompare(b.usernameUser || ""),
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      search: false,
+      ellipsis: true,
+      sorter: (a, b) => (a.email || "").localeCompare(b.email || ""),
+    },
+    {
+      title: "Thời gian đặt",
+      dataIndex: "createdTime",
+      search: false,
+      width: 180,
+      sorter: (a, b) => (a.createdTime || "").localeCompare(b.createdTime || ""),
+    },
+    {
+      title: "Giá (VNĐ)",
+      dataIndex: "price",
+      search: false,
+      width: 130,
+      render: (text) => (
+        <Tag color="green">
+          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(text)}
+        </Tag>
+      ),
+      sorter: (a, b) => a.price - b.price,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      search: false,
+      width: 150,
+      render: (text) => {
+        if (text === "WAITING_PAYMENT") return <Tag color="orange">Chờ thanh toán</Tag>;
+        if (text === "SUCCESS") return <Tag color="blue">Đã thanh toán</Tag>;
+        return <Tag color="red">Hết hạn thanh toán</Tag>;
+      },
+      sorter: (a, b) => (a.status || "").localeCompare(b.status || ""),
+    },
+    {
+      title: "Hành động",
+      search: false,
+      width: 150,
+      render: (_, record) => {
+        if (record.status === "WAITING_PAYMENT") {
           return (
             <Action
-              onEdit={handleEdit}
-              // onDeleted={handleDelete}
-              phimItem={params.row}
-              // onXemQua={onXemQua}
-              // onTuChoi={handleTuChoi}
+              onEdit={() => handleEdit(record)}
+              phimItem={record}
             />
           );
         } else {
           return (
-            <button
-              style={{ fontSize: "15px" }}
-              onClick={() => {
-                getTicketDetail(params.row.id);
-              }}
-              className="btn btn-primary"
+            <AntButton
+              type="primary"
+              size="small"
+              onClick={() => getTicketDetail(record.id)}
             >
               Xem chi tiết
-            </button>
+            </AntButton>
           );
         }
       },
-
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
     },
-    {
-      field: "createdTime",
-      headerName: "Thời gian đặt",
-      width: 280,
-      type: "dateTime",
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      // hide: true,
-    },
-    {
-      field: "price",
-      headerName: "Giá (vnđ)",
-      type: "number",
-      width: 130,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      // renderCell: RenderCellExpand,
-    },
-    {
-      field: "usernameUser",
-      headerName: "Tài khoản người đặt",
-      width: 180,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-    },
-    {
-      field: "nameUser",
-      headerName: "Tên người đặt",
-      width: 100,
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-      hide: true,
-    },
-    
-    {
-      field: "status",
-      headerName: "Trạng thái",
-      width: 180,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      // renderCell: RenderCellExpand,
-      renderCell: (params) => {
-        if (params.row.status === "WAITING_PAYMENT") {
-          return "Chờ thanh toán"
-        } else if (params.row.status === "SUCCESS")
-        {
-          return "Đã thanh toán"
-        }
-        else return "Hết hạn thanh toán"
-      },
-    },
-    {
-      field: "id",
-      headerName: "Mã hóa đơn",
-      width: 130,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-    },
-    {
-      field: "idUser",
-      headerName: "ID đặt",
-      width: 120,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-      hide:true,
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      width: 200,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-    },
-    // {
-    //   field: "imageUser",
-    //   headerName: "Hình ảnh",
-    //   width: 200,
-    //   renderCell: (params) => (
-    //     <Tooltip title={params.row.mainImage}>
-    //       <img
-    //         style={{
-    //           maxWidth: "100%",
-    //           height: "100%",
-    //           borderRadius: 4,
-    //           marginRight: 15,
-    //         }}
-    //         src={params.row.mainImage}
-    //       />
-    //     </Tooltip>
-    //   ),
-    //   headerAlign: "center",
-    //   align: "center",
-    //   headerClassName: "custom-header",
-    // },
-    
-    // {
-    //   field: "releaseDate",
-    //   headerName: "Release Date",
-    //   width: 160,
-    //   type: "date",
-    //   headerAlign: "center",
-    //   align: "center",
-    //   headerClassName: "custom-header",
-    //   valueFormatter: (params) => params.value.slice(0, 10),
-    // },
-    // {
-    //   field: "rated",
-    //   headerName: "Rated",
-    //   width: 120,
-    //   headerAlign: "center",
-    //   align: "center",
-    //   headerClassName: "custom-header",
-    // },
-    // { field: "id", hide: true, width: 130 },
-    // { field: "categories", hide: true, width: 130 },
-    // { field: "duration", hide: true, width: 200, renderCell: RenderCellExpand },
   ];
-  const modifySlugify = { lower: true, locale: "vi" };
+
   return (
-    <div style={{ height: "80vh", width: "100%", backgroundColor:"white"}}>
-      <div className={classes.control}>
-        <div className="row">
-          {/* <div className={`col-12 col-md-6 ${classes.itemCtro}`}>
-            <Button
-              variant="contained"
-              color="primary"
-              className={classes.addMovie}
-              onClick={handleAddMovie}
-              disabled={loadingAddBill}
-              startIcon={<AddBoxIcon />}
-            >
-              Thêm sự kiện, khuyến mãi
-            </Button>
-          </div> */}
-          <div className={`col-12 col-md-6 ${classes.itemCtro}`}>
-            <div className={classes.search}>
-              <div className={classes.searchIcon}>
-                <SearchIcon />
-              </div>
-              <InputBase
-                placeholder="Tìm kiếm..."
-                classes={{
-                  root: classes.inputRoot,
-                  input: classes.inputInput,
-                }}
-                style={{color:"black"}}
-                onChange={(evt) => handleInputSearchChange(evt.target.value)}
-              />
-            </div>
-          </div>
-          <div className={`col-12 col-md-2 ${classes.itemCtro}`} onClick={handleReload}>
-            <RefreshButton />
-          </div>
-        </div>
-      </div>
-      <DataGrid
-        className={classes.rootDataGrid}
-        rows={onFilter()}
+    <div style={{ background: "#fff", padding: 24, borderRadius: 8, height: "100%" }}>
+      <ProTable
         columns={columns}
-        pageSize={25}
-        rowsPerPageOptions={[10, 25, 50]}
-        // hiện loading khi
-        loading={
-          loadingUpdateBill ||
-          loadingDelete ||
-          loadingBillListTTTaiQuay 
-          // loadingUpdateNoneImageMovie
-        }
-        components={{
-          LoadingOverlay: CustomLoadingOverlay,
-          Toolbar: GridToolbar,
+        dataSource={getFilteredData()}
+        rowKey="id"
+        loading={loadingBillListTTTaiQuay || loadingUpdateBill || loadingDelete}
+        onSubmit={(params) => setSearchParams(params)}
+        onReset={() => setSearchParams({})}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
         }}
-        // sort
-        sortModel={[{ field: "nameUser", sort: "asc" }]}
+        scroll={{ x: 'max-content' }}
+        search={{
+          labelWidth: "auto",
+        }}
+        dateFormatter="string"
+        headerTitle="Danh sách Hóa Đơn"
       />
 
-      {toggle && <div style={{ position: "fixed", borderRadius: "5px", top: "15%", left: "10%", backgroundColor: "white", zIndex: "10000", width: "80%", height: "70%", overflow: "scroll", border:"2px solid black" }}>
-        <DetailPopup ThongTin={ticketDetail} />
-        <div onClick={() => setToggle(false)} style={{ position: "absolute", right: "0px", top: "0px", backgroundColor: "red", padding: "10px", display: "flex", justifyContent: "center", alignItems: "center", cursor: "pointer" }}><CloseFullscreenIcon /></div>
-      </div>}
-
-      <Dialog open={openModal}>
-        <DialogTitle onClose={() => setOpenModal(false)}>
-          {selectedPhim?.current?.brief
-            ? `Chỉnh sửa: ${selectedPhim?.current?.brief}`
-            : "Tạo mới"}
-        </DialogTitle>
-        <DialogContent dividers>
-          {/* <FormAddBill
-            selectedPhim={selectedPhim.current}
-            onUpdate={onUpdate}
-            onAddMovie={onAddMovie}
-          /> */}
-        </DialogContent>
-      </Dialog>
-          
+      {toggle && (
+        <div style={{ 
+          position: "fixed", 
+          borderRadius: "8px", 
+          top: "10%", 
+          left: "15%", 
+          backgroundColor: "white", 
+          zIndex: "10000", 
+          width: "70%", 
+          height: "80%", 
+          overflow: "auto", 
+          boxShadow: "0 4px 20px rgba(0,0,0,0.2)" 
+        }}>
+          <DetailPopup ThongTin={ticketDetail} />
+          <div 
+            onClick={() => setToggle(false)} 
+            style={{ 
+              position: "absolute", 
+              right: "16px", 
+              top: "16px", 
+              backgroundColor: "#ff4d4f", 
+              color: "#fff",
+              padding: "8px", 
+              borderRadius: "50%",
+              display: "flex", 
+              justifyContent: "center", 
+              alignItems: "center", 
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+            }}
+          >
+            <CloseFullscreenIcon fontSize="small" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

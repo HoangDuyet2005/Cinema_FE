@@ -2,33 +2,28 @@ import axiosClient from "./axiosClient";
 
 const reviewsApi = {
 
-  getBillDashBoard: () => {
-    const path = `/bills/getBillDashBoard?fromDate=2022-12-01&toDate=2023-12-01&status=SUCCESS`;
+  getBillDashBoard: (fromDate, toDate, branchId = 0, movieId = 0) => {
+    const path = `/bills/getBillDashBoard?fromDate=${fromDate}&toDate=${toDate}&branchId=${branchId}&movieId=${movieId}&status=SUCCESS`;
     return axiosClient.get(path);
   },
 
-  getBillDashBoardSortAZ: () => {
-    const path = `/bills/getUserDashBoard?status=SUCCESS`;
+  getBillDashBoardSortAZ: (fromDate, toDate, branchId = 0, movieId = 0) => {
+    const path = `/bills/getUserDashBoard?status=SUCCESS&fromDate=${fromDate}&toDate=${toDate}&branchId=${branchId}&movieId=${movieId}`;
     return axiosClient.get(path);
   },
 
-  getBillDashBoardHetHan: () => {
-    const path = `/bills/getBillDashBoard?fromDate=2022-12-01&toDate=2023-12-01&status=EXPIRATION`;
+  getBillSideBySide: (fromDate, toDate, branchId = 0, movieId = 0) => {
+    const path = `/bills/getBillDashBoard?fromDate=${fromDate}&toDate=${toDate}&branchId=${branchId}&movieId=${movieId}&status=SUCCESS`;
     return axiosClient.get(path);
   },
 
-  getBillSideBySide: () => {
-    const path = `/bills/getBillDashBoard?fromDate=2019-01-01&toDate=2023-12-01&status=SUCCESS`;
+  getTicketSalePerDay: (fromDate, toDate, branchId = 0, movieId = 0) => {
+    const path = `/bills/getBillDashBoard?fromDate=${fromDate}&toDate=${toDate}&branchId=${branchId}&movieId=${movieId}&status=SUCCESS`;
     return axiosClient.get(path);
   },
 
-  getTicketSalePerDay: () => {
-    const path = `/bills/getBillDashBoard?fromDate=2019-01-01&toDate=2023-12-01&status=SUCCESS`;
-    return axiosClient.get(path);
-  },
-
-  getBillPieChart: () => {
-    const path = `/bills/getBillDashBoard?fromDate=2019-01-01&toDate=2023-12-01&status=SUCCESS`;
+  getBillPieChart: (fromDate, toDate, branchId = 0, movieId = 0) => {
+    const path = `/bills/getBillDashBoard?fromDate=${fromDate}&toDate=${toDate}&branchId=${branchId}&movieId=${movieId}&status=SUCCESS`;
     return axiosClient.get(path);
   },
 

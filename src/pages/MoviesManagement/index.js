@@ -1,20 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-
-import { DataGrid, GridToolbar, GridOverlay } from "@material-ui/data-grid";
 import { useSelector, useDispatch } from "react-redux";
-import Button from "@material-ui/core/Button";
-import { useSnackbar } from "notistack";
-import CircularProgress from "@material-ui/core/CircularProgress";
-import SearchIcon from "@material-ui/icons/Search";
-import InputBase from "@material-ui/core/InputBase";
-import Dialog from "@material-ui/core/Dialog";
-import AddBoxIcon from "@material-ui/icons/AddBox";
-import RenderCellExpand from "./RenderCellExpand";
-import slugify from "slugify";
-import useMediaQuery from "@material-ui/core/useMediaQuery";
-import RefreshButton from "../../utilities/RefreshButton"
+import { ProTable } from "@ant-design/pro-components";
+import { Button, Modal, Popconfirm, message, Tag, Tooltip, Image } from "antd";
+import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined } from "@ant-design/icons";
 
-import { useStyles, DialogContent, DialogTitle } from "./styles";
 import {
   getMovieListManagement,
   deleteMovie,
@@ -23,57 +12,35 @@ import {
   updateMovie,
   addMovieUpload,
 } from "../../reducers/actions/Movie";
-import Action from "./Action";
-import ThumbnailYoutube from "./ThumbnailYoutube";
-import Form from "./Form";
-import FormAdd from "./FormAdd";
-import Swal from "sweetalert2";
-import formatDate from "../../utilities/formatDate";
 
-function CustomLoadingOverlay() {
-  return (
-    <GridOverlay>
-      <CircularProgress style={{ margin: "auto" }} />
-    </GridOverlay>
-  );
-}
+import ThumbnailYoutube from "./ThumbnailYoutube";
+import FormAdd from "./FormAdd";
+import formatDate from "../../utilities/formatDate";
+import slugify from "slugify";
 
 export default function MoviesManagement() {
-  const [movieListDisplay, setMovieListDisplay] = useState([]);
-  console.log("movieListDisplay: ", movieListDisplay);
-  const classes = useStyles();
-  const  {enqueueSnackbar}  = useSnackbar();
-  let {
+  const dispatch = useDispatch();
+  const [openModal, setOpenModal] = useState(false);
+  const [searchParams, setSearchParams] = useState({});
+  const selectedPhim = useRef(null);
+  const actionRef = useRef();
+  
+  const {
     movieList2,
     loadingMovieList2,
     loadingDeleteMovie,
-    errorDeleteMovie,
     successDeleteMovie,
     successUpdateMovie,
-    errorUpdateMovie,
-    loadingUpdateMovie,
-    loadingAddUploadMovie,
-    successAddUploadMovie,
-    errorAddUploadMovie,
-    loadingUpdateNoneImageMovie,
     successUpdateNoneImageMovie,
-    errorUpdateNoneImageMovie,
+    successAddUploadMovie,
   } = useSelector((state) => state.movieReducer);
-  const dispatch = useDispatch();
-  const newImageUpdate = useRef("");
-  const callApiChangeImageSuccess = useRef(false);
-  const [valueSearch, setValueSearch] = useState("");
-  const clearSetSearch = useRef(0);
-  const [openModal, setOpenModal] = React.useState(false);
-  const selectedPhim = useRef(null);
-  const isMobile = useMediaQuery("(max-width:768px)");
+
   useEffect(() => {
     if (
       !movieList2 ||
       successUpdateMovie ||
       successUpdateNoneImageMovie ||
       successDeleteMovie ||
-      errorDeleteMovie ||
       successAddUploadMovie
     ) {
       dispatch(getMovieListManagement());
@@ -82,163 +49,36 @@ export default function MoviesManagement() {
     successUpdateMovie,
     successUpdateNoneImageMovie,
     successDeleteMovie,
-    errorDeleteMovie,
     successAddUploadMovie,
-  ]); // khi vừa thêm phim mới xong mà xóa liên backend sẽ báo lỗi xóa không được nhưng thực chất đã xóa thành công > errorDeleteMovie nhưng vẫn tiến hành làm mới lại danh sách
+    dispatch,
+    movieList2
+  ]);
 
-  const handleReload = () => {
-    dispatch(getMovieListManagement());
-    // return
-  }
+  useEffect(() => {
+    if (successDeleteMovie) message.success("Xóa phim thành công!");
+    if (successUpdateMovie || successUpdateNoneImageMovie) message.success("Cập nhật phim thành công!");
+    if (successAddUploadMovie) message.success("Thêm phim thành công!");
+  }, [successDeleteMovie, successUpdateMovie, successUpdateNoneImageMovie, successAddUploadMovie]);
 
   useEffect(() => {
     return () => {
       dispatch(resetMoviesManagement());
     };
-  }, []);
-  useEffect(() => {
-    if (movieList2) {
-      let newMovieListDisplay = movieList2?.data?.map((movie) => ({
-        ...movie,
-        hanhDong: "",
-        id: movie.id,
-      }));
-      setMovieListDisplay(newMovieListDisplay);
-    }
-  }, [movieList2]);
+  }, [dispatch]);
 
-  useEffect(() => {
-    // delete movie xong thì thông báo
-    if (errorDeleteMovie === "Delete Success but backend return error") {
-      successDeleteMovie = "Delete Success !";
-    }
-    if (successDeleteMovie) {
-      enqueueSnackbar(successDeleteMovie, { variant: "success" });
-      return;
-    }
-    if (errorDeleteMovie) {
-      enqueueSnackbar(errorDeleteMovie, { variant: "error" });
-    }
-  }, [errorDeleteMovie, successDeleteMovie]);
-
-  useEffect(() => {
-    if (successUpdateMovie || successUpdateNoneImageMovie) {
-      callApiChangeImageSuccess.current = true;
-      enqueueSnackbar(
-        `Update successfully: ${successUpdateMovie.name ?? ""}${
-          successUpdateNoneImageMovie.name ?? ""
-        }`,
-        { variant: "success" }
-      );
-    }
-    if (errorUpdateMovie || errorUpdateNoneImageMovie) {
-      callApiChangeImageSuccess.current = false;
-      enqueueSnackbar(
-        `${errorUpdateMovie ?? ""}${errorUpdateNoneImageMovie ?? ""}`,
-        { variant: "error" }
-      );
-    }
-  }, [
-    successUpdateMovie,
-    errorUpdateMovie,
-    successUpdateNoneImageMovie,
-    errorUpdateNoneImageMovie,
-  ]);
-
-  useEffect(() => {
-    if (successAddUploadMovie) {
-      enqueueSnackbar(
-        `Thêm mới thành công: ${successAddUploadMovie.name}`,
-        { variant: "success" }
-      );
-    }
-    if (errorAddUploadMovie) {
-      enqueueSnackbar(errorAddUploadMovie, { variant: "error" });
-    }
-  }, [successAddUploadMovie, errorAddUploadMovie]);
-
-  // xóa một phim
   const handleDeleteOne = (maPhim) => {
-    const swalWithBootstrapButtons = Swal.mixin({
-      customClass: {
-        confirmButton: 'btn btn-success',
-        cancelButton: 'btn btn-danger'
-      },
-      buttonsStyling: false
-    })
-    
-    swalWithBootstrapButtons.fire({
-      title: 'Bạn có chắc không?',
-      text: "Bạn không thể trở lại sau khi xóa!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Vâng, xóa!',
-      cancelButtonText: 'Hủy!',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.isConfirmed) {
-        if (!loadingDeleteMovie) {
-          // nếu click xóa liên tục một user
-          dispatch(deleteMovie(maPhim));
-          // window.location.reload();
-        }
-        swalWithBootstrapButtons.fire(
-          'Deleted!',
-          'Your file has been deleted.',
-          'success'
-        )
-      } else if (
-        /* Read more about handling dismissals below */
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        swalWithBootstrapButtons.fire(
-          'Cancelled',
-          'Your movie is safe :)',
-          'error'
-        )
-      }
-    })
-
+    if (!loadingDeleteMovie) {
+      dispatch(deleteMovie(maPhim));
+    }
   };
+
   const handleEdit = (phimItem) => {
     selectedPhim.current = phimItem;
     setOpenModal(true);
   };
 
-  const onUpdate = (movieObj, hinhAnh, fakeImage) => {
-    if (loadingUpdateMovie || loadingUpdateNoneImageMovie) {
-      return undefined;
-    }
-    console.log('====================================');
-    console.log("Trả về onUpdate: ", movieObj);
-    console.log('====================================');
-    setOpenModal(false);
-    newImageUpdate.current = fakeImage;
-    // movieObj.isShowing = trangThai
-    console.log('====================================');
-    console.log(movieObj);
-    console.log('====================================');
-
-    if (typeof hinhAnh === "string") {
-      // nếu dùng updateMovieUpload sẽ bị reset danhGia về 10
-      const movieUpdate = movieListDisplay?.find(
-        (movie) => movie.id === fakeImage.id
-      ); // lẩy ra url gốc, tránh gửi base64 tới backend
-      movieObj.smallImageURl = movieUpdate.smallImageURl;
-      dispatch(updateMovie(movieObj));
-      return undefined;
-    }
-    dispatch(updateMovieUpload(movieObj));
-  };
-  const onAddMovie = (movieObj) => {
-    if (!loadingAddUploadMovie) {
-      console.log("Thêm mới phim này:", movieObj);
-      dispatch(addMovieUpload(movieObj));
-    }
-    setOpenModal(false);
-  };
   const handleAddMovie = () => {
-    const emtySelectedPhim = {
+    selectedPhim.current = {
       id: "",
       name: "",
       smallImageURl: "",
@@ -255,196 +95,170 @@ export default function MoviesManagement() {
       rated: "",
       isShowing: null,
     };
-    selectedPhim.current = emtySelectedPhim;
     setOpenModal(true);
   };
 
-  const handleInputSearchChange = (props) => {
-    clearTimeout(clearSetSearch.current);
-    clearSetSearch.current = setTimeout(() => {
-      setValueSearch(props);
-    }, 500);
+  const handleReload = () => {
+    dispatch(getMovieListManagement());
+    setSearchParams({});
   };
 
-  const onFilter = () => {
-    // dùng useCallback, slugify bỏ dấu tiếng việt
-    let searchMovieListDisplay = movieListDisplay?.filter((movie) => {
-      const matchTenPhim =
-        slugify(movie.name ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      const matchMoTa =
-        slugify(movie.longDescription ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      const matchNgayKhoiChieu =
-        slugify(movie.releaseDate ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      return matchTenPhim || matchMoTa || matchNgayKhoiChieu;
-    });
-    if (newImageUpdate.current && callApiChangeImageSuccess.current) {
-      // hiển thị hình bằng base64 thay vì url, lỗi react không hiển thị đúng hình mới cập nhật(đã cập hình thanh công nhưng url backend trả về giữ nguyên đường dẫn)
-      searchMovieListDisplay = searchMovieListDisplay?.map((movie) => {
-        if (movie.id === newImageUpdate.current.id) {
-          return { ...movie, smallImageURl: newImageUpdate.current.smallImageURl};
-        }
-        return movie;
-      });
+  const onUpdate = (movieObj, hinhAnh, fakeImage) => {
+    setOpenModal(false);
+    if (typeof hinhAnh === "string") {
+      const movieUpdate = movieList2?.data?.find((movie) => movie.id === fakeImage.id);
+      movieObj.smallImageURl = movieUpdate?.smallImageURl;
+      dispatch(updateMovie(movieObj));
+      return undefined;
     }
-    return searchMovieListDisplay;
+    dispatch(updateMovieUpload(movieObj));
+  };
+
+  const onAddMovie = (movieObj) => {
+    dispatch(addMovieUpload(movieObj));
+    setOpenModal(false);
+  };
+
+  // Lọc dữ liệu theo thanh tìm kiếm
+  const modifySlugify = { lower: true, locale: "vi" };
+  const getFilteredData = () => {
+    if (!movieList2?.data) return [];
+    return movieList2.data.filter((movie) => {
+      if (!searchParams.name) return true;
+      const matchTenPhim = slugify(movie.name ?? "", modifySlugify)?.indexOf(slugify(searchParams.name, modifySlugify)) !== -1;
+      return matchTenPhim;
+    });
   };
 
   const columns = [
     {
-      field: "hanhDong",
-      headerName: "Action",
-      width: 130,
-      renderCell: (params) => (
-        <Action
-          onEdit={handleEdit}
-          onDeleted={handleDeleteOne}
-          phimItem={params.row}
+      title: "Hình ảnh",
+      dataIndex: "smallImageURl",
+      search: false,
+      render: (text) => (
+        <Image
+          width={60}
+          height={80}
+          src={text}
+          fallback="https://via.placeholder.com/60x80?text=No+Image"
+          style={{ objectFit: "cover", borderRadius: "4px" }}
         />
       ),
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
     },
     {
-      field: "name",
-      headerName: "Tên phim",
-      width: 250,
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
+      title: "Tên phim",
+      dataIndex: "name",
+      copyable: true,
+      ellipsis: true,
     },
     {
-      field: "trailerURL",
-      headerName: "Trailer",
-      width: 130,
-      renderCell: (params) => (
-        <div style={{ display: "inline-block" }}>
-          <ThumbnailYoutube urlYoutube={params.row.trailerURL} />
+      title: "Ngày khởi chiếu",
+      dataIndex: "releaseDate",
+      search: false,
+      render: (text) => (text ? formatDate(text.slice(0, 10)).dateFull : ""),
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "longDescription",
+      search: false,
+      ellipsis: true,
+    },
+    {
+      title: "Trailer",
+      dataIndex: "trailerURL",
+      search: false,
+      render: (text) => (
+        <div style={{ width: 100 }}>
+          <ThumbnailYoutube urlYoutube={text} />
         </div>
       ),
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
     },
     {
-      field: "smallImageURl",
-      headerName: "Hình ảnh",
-      width: 200,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      renderCell: (params) => RenderCellExpand(params),
+      title: "Đánh giá",
+      dataIndex: "rated",
+      search: false,
+      render: (text) => <Tag color="blue">{text || 0}</Tag>,
     },
     {
-      field: "longDescription",
-      headerName: "Mô tả",
-      width: 170,
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
+      title: "Hành động",
+      valueType: "option",
+      render: (text, record) => [
+        <Button
+          key="edit"
+          type="primary"
+          icon={<EditOutlined />}
+          size="small"
+          onClick={() => handleEdit(record)}
+        >
+          Sửa
+        </Button>,
+        <Popconfirm
+          key="delete"
+          title="Bạn có chắc chắn muốn xóa phim này?"
+          onConfirm={() => handleDeleteOne(record.id)}
+          okText="Có"
+          cancelText="Không"
+        >
+          <Button type="primary" danger icon={<DeleteOutlined />} size="small">
+            Xóa
+          </Button>
+        </Popconfirm>,
+      ],
     },
-    {
-      field: "releaseDate",
-      headerName: "Ngày khởi chiếu",
-      width: 190,
-      type: "date",
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      valueFormatter: (params) => formatDate(params.value.slice(0, 10)).dateFull,
-    },
-    {
-      field: "rated",
-      headerName: "Đánh giá",
-      width: 120,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-    },
-    { field: "id", hide: true, width: 130 },
-    { field: "categories", hide: true, width: 130 },
-    { field: "duration", hide: true, width: 200, renderCell: RenderCellExpand },
   ];
-  const modifySlugify = { lower: true, locale: "vi" };
+
   return (
-    <div style={{ height: "80vh", width: "100%", backgroundColor:"white"}}>
-      <div className={classes.control}>
-        <div className="row">
-          <div className={`col-2 col-md-3 ${classes.itemCtro}`}>
-            <Button
-              variant="contained"
-              color="primary"
-              className={classes.addMovie}
-              onClick={handleAddMovie}
-              disabled={loadingAddUploadMovie}
-              startIcon={<AddBoxIcon />}
-            >
-              Thêm phim
-            </Button>
-          </div>
-          <div className={`col-12 col-md-2 ${classes.itemCtro}`} onClick={handleReload}>
-            <RefreshButton />
-          </div>
-          <div className={`col-12 col-md-4 ${classes.itemCtro}`}>
-            <div className={classes.search}>
-              <div className={classes.searchIcon}>
-                <SearchIcon />
-              </div>
-              <InputBase
-                placeholder="Tìm kiếm phim..."
-                classes={{
-                  root: classes.inputRoot,
-                  input: classes.inputInput,
-                }}
-                style={{color:"black"}}
-                onChange={(evt) => handleInputSearchChange(evt.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <DataGrid
-        className={classes.rootDataGrid}
-        rows={onFilter()}
+    <div style={{ background: "#fff", padding: 24, borderRadius: 8 }}>
+      <ProTable
         columns={columns}
-        pageSize={25}
-        rowsPerPageOptions={[10, 25, 50]}
-        // hiện loading khi
-        loading={
-          loadingUpdateMovie ||
-          loadingDeleteMovie ||
-          loadingMovieList2 ||
-          loadingUpdateNoneImageMovie
-        }
-        components={{
-          LoadingOverlay: CustomLoadingOverlay,
-          Toolbar: GridToolbar,
+        actionRef={actionRef}
+        dataSource={getFilteredData()}
+        rowKey="id"
+        loading={loadingMovieList2}
+        onSubmit={(params) => setSearchParams(params)}
+        onReset={() => setSearchParams({})}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
         }}
-        // sort
-        sortModel={[{ field: "name", sort: "asc" }]}
+        scroll={{ x: 'max-content' }}
+        search={{
+          labelWidth: "auto",
+        }}
+        dateFormatter="string"
+        headerTitle="Danh sách Phim"
+        toolBarRender={() => [
+          <Button key="reload" type="default" icon={<ReloadOutlined />} onClick={handleReload}>
+            Làm mới
+          </Button>,
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAddMovie}
+          >
+            Thêm phim mới
+          </Button>,
+        ]}
       />
-      <Dialog open={openModal}>
-        <DialogTitle onClose={() => setOpenModal(false)}>
-          {selectedPhim?.current?.name
-            ? `Edit: ${selectedPhim?.current?.name}`
-            : "Add new"}
-        </DialogTitle>
-        <DialogContent dividers>
+
+      <Modal
+        title={selectedPhim?.current?.name ? `Sửa phim: ${selectedPhim?.current?.name}` : "Thêm phim mới"}
+        open={openModal}
+        onCancel={() => setOpenModal(false)}
+        footer={null}
+        width={800}
+        destroyOnClose
+      >
+        {openModal && (
           <FormAdd
+            key={selectedPhim.current?.id || "add"}
             selectedPhim={selectedPhim.current}
             onUpdate={onUpdate}
             onAddMovie={onAddMovie}
           />
-        </DialogContent>
-      </Dialog>
+        )}
+      </Modal>
     </div>
   );
 }

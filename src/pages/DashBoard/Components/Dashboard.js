@@ -1,266 +1,289 @@
-﻿import React from "react";
+import React, { useEffect, useState } from "react";
 import clsx from "clsx";
 import { makeStyles } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
-// import Drawer from "@material-ui/core/Drawer";
-// import AppBar from "@material-ui/core/AppBar";
-// import Toolbar from "@material-ui/core/Toolbar";
-// import List from "@material-ui/core/List";
 import Typography from "@material-ui/core/Typography";
-// import Divider from "@material-ui/core/Divider";
-// import IconButton from "@material-ui/core/IconButton";
-// import Badge from "@material-ui/core/Badge";
-// import Container from "@material-ui/core/Container";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
 import Link from "@material-ui/core/Link";
-// import MenuIcon from "@material-ui/icons/Menu";
-// import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
-// import NotificationsIcon from "@material-ui/icons/Notifications";
-// import { mainListItems, secondaryListItems } from "./listItems";
-// import Chart from "./Chart";
+import { DatePicker, Select, Button, Statistic, Row, Col, Card, message } from "antd";
+import moment from "moment";
+import * as XLSX from "xlsx";
+
+import billsApi from "../../../api/billsApi";
+import branchApi from "../../../api/branchApi";
+import moviesApi from "../../../api/moviesApi";
+
 import Deposits from "./Deposits";
-import DepositsHetHan from "./DepositsHetHan";
 import Orders from "./Orders";
 import ChartSideBySide from "./ChartSideBySide";
-// import PieChartSmallValue from "./PieChartSmallValue";
 import TicketPerDay from "./TicketPerDay";
 import UserDash from "./UserDash";
 import Ranking from "./Ranking";
-import TienDoUser from "./TienDoUser";
+import TopMovies from "./TopMovies";
+
+const { RangePicker } = DatePicker;
+const { Option } = Select;
+const { Title, Text } = Typography;
 
 function Copyright() {
-  // classes created because it is needed in the footer.
   const classes = useStyles();
   return (
-    // <Container className={classes.footer}>
-      <Typography variant="body2" color="textSecondary" align="center">
-        {"Copyright © "}
-        <Link color="inherit" href="https://material-ui.com/">
-          WORLD CINEMA Website
-        </Link>{" "}
-        {new Date().getFullYear()}
-        {"."}
-      </Typography>
-    // </Container>
+    <Typography variant="body2" color="textSecondary" align="center">
+      {"Copyright © "}
+      <Link color="inherit" href="#">
+        WORLD CINEMA Website
+      </Link>{" "}
+      {new Date().getFullYear()}
+      {"."}
+    </Typography>
   );
 }
 
-const drawerWidth = 240;
-
-const useStyles = makeStyles(theme => ({
-  toolbar: {
-    // paddingRight: 24 // keep right padding when drawer closed
-  },
-  toolbarIcon: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    padding: "0 8px",
-    ...theme.mixins.toolbar
-  },
-  appBar: {
-    zIndex: theme.zIndex.drawer + 1,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen
-    })
-  },
-  appBarShift: {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen
-    })
-  },
-  menuButton: {
-    marginRight: 36
-  },
-  menuButtonHidden: {
-    display: "none"
-  },
-  title: {
-    flexGrow: 1
-  },
-  drawerPaper: {
-    position: "relative",
-    whiteSpace: "nowrap",
-    width: drawerWidth,
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen
-    })
-  },
-  drawerPaperClose: {
-    overflowX: "hidden",
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen
-    }),
-    width: theme.spacing(7),
-    [theme.breakpoints.up("sm")]: {
-      width: theme.spacing(9)
-    }
-  },
+const useStyles = makeStyles((theme) => ({
   content: {
-    // content which is class of main needs to be flex and column direction
     display: "flex",
     flexDirection: "column",
     flexGrow: 1,
     height: "100vh",
     overflow: "auto",
   },
-  container: {
-    // paddingLeft: theme.spacing(4),
-    // paddingBottom: theme.spacing(4)
-  },
   paper: {
     padding: "0.5rem",
     display: "flex",
     overflow: "auto",
-    flexDirection: "column"
+    flexDirection: "column",
   },
   fixedHeight: {
     height: "auto",
   },
-  // added the footer class
-  footer: {
+  filterBar: {
     padding: theme.spacing(2),
-    marginTop: "auto",
-    backgroundColor: "white",
-    // just this item, push to bottom
-    alignSelf: "flex-end"
-  }
+    marginBottom: theme.spacing(3),
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(2),
+    flexWrap: "wrap",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    boxShadow: "0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12)",
+  },
 }));
 
 export default function Dashboard() {
   const classes = useStyles();
-  const [open, setOpen] = React.useState(true);
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
+  // Filters State
+  const [dates, setDates] = useState([moment().subtract(30, "days"), moment()]);
+  const [branchId, setBranchId] = useState(0);
+  const [movieId, setMovieId] = useState(0);
+
+  // Dropdown Data
+  const [branches, setBranches] = useState([]);
+  const [movies, setMovies] = useState([]);
+
+  // Dashboard Data
+  const [dashboardData, setDashboardData] = useState({});
+  const [userDashboardData, setUserDashboardData] = useState([]);
+
+  useEffect(() => {
+    // Load dropdowns
+    branchApi.getListBranchByAdminStaff().then((res) => {
+      setBranches(res?.data?.data || []);
+    }).catch(() => setBranches([]));
+    
+    moviesApi.getTatCaDanhSachPhimDangSapDaChieu().then((res) => {
+      setMovies(res?.data?.data || []);
+    }).catch(() => setMovies([]));
+  }, []);
+
+  const handleFilter = () => {
+    if (!dates || dates.length !== 2) {
+      message.error("Vui lòng chọn khoảng thời gian hợp lệ!");
+      return;
+    }
+    const fromDate = dates[0].format("YYYY-MM-DD");
+    const toDate = dates[1].format("YYYY-MM-DD");
+
+    if (dates[0].isAfter(dates[1])) {
+      message.error("Khoảng thời gian không hợp lệ!");
+      return;
+    }
+
+    // Fetch Bill Dashboard
+    billsApi.getBillDashBoard(fromDate, toDate, branchId, movieId)
+      .then((res) => {
+        setDashboardData(res.data);
+      })
+      .catch((err) => {
+        message.error("Lỗi khi tải dữ liệu thống kê giao dịch!");
+      });
+
+    // Fetch User Dashboard
+    billsApi.getBillDashBoardSortAZ(fromDate, toDate, branchId, movieId)
+      .then((res) => {
+        setUserDashboardData(res.data);
+      })
+      .catch((err) => {
+        message.error("Lỗi khi tải dữ liệu thống kê người dùng!");
+      });
+  };
+
+  useEffect(() => {
+    handleFilter();
+    // eslint-disable-next-line
+  }, []);
+
+  const handleExport = () => {
+    if (!dashboardData || !dashboardData.dayTransactionReports) {
+      message.warning("Không có dữ liệu để xuất!");
+      return;
+    }
+
+    const reportData = dashboardData.dayTransactionReports.map((item) => ({
+      "Ngày": item.dateTran,
+      "Số giao dịch": item.transactionCount,
+      "Số vé bán ra": item.ticketAmount,
+      "Doanh thu (VND)": item.incomeAmount,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(reportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "ThongKe");
+    XLSX.writeFile(wb, `BaoCao_DoanhThu_${moment().format("DDMMYYYY")}.xlsx`);
+  };
+
   return (
-    <div className={classes.root} style={{marginLeft:"1rem", marginRight:"1rem"}}>
+    <div className={classes.root} style={{ marginLeft: "1rem", marginRight: "1rem" }}>
       <CssBaseline />
-      {/* <AppBar
-        position="absolute"
-        className={clsx(classes.appBar, open && classes.appBarShift)}
-      >
-        <Toolbar className={classes.toolbar}>
-          <IconButton
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            className={clsx(
-              classes.menuButton,
-              open && classes.menuButtonHidden
-            )}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            component="h1"
-            variant="h6"
-            color="inherit"
-            noWrap
-            className={classes.title}
-          >
-            Dashboard
-          </Typography>
-          <IconButton color="inherit">
-            <Badge badgeContent={4} color="secondary">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-        </Toolbar>
-      </AppBar> */}
-      {/* <Drawer
-        variant="permanent"
-        classes={{
-          paper: clsx(classes.drawerPaper, !open && classes.drawerPaperClose)
-        }}
-        open={open}
-      >
-        <div className={classes.toolbarIcon}>
-          <IconButton onClick={handleDrawerClose}>
-            <ChevronLeftIcon />
-          </IconButton>
-        </div>
-        <Divider />
-        <List>{mainListItems}</List>
-        <Divider />
-        <List>{secondaryListItems}</List>
-      </Drawer> */}
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
-        {/* <Container maxWidth="lg" className={classes.container}> */}
-          <Grid container spacing={3}>
-            {/* Biểu đồ theo dỗi tiến độ user */}
-            
-            {/* <Grid item xs={12} md={6} lg={12}>
-               <Paper className={fixedHeightPaper}>
-                 <TienDoUser />
-               </Paper>
-             </Grid> */}
+        
+        {/* Bộ lọc */}
+        <div className={classes.filterBar}>
+          <RangePicker 
+            value={dates} 
+            onChange={(val) => setDates(val)} 
+            format="DD/MM/YYYY" 
+            allowClear={false} 
+            style={{ width: 250 }} 
+          />
+          <Select
+            showSearch
+            placeholder="Chọn cụm rạp"
+            value={branchId}
+            onChange={(val) => setBranchId(val)}
+            style={{ width: 200 }}
+            optionFilterProp="children"
+          >
+            <Option value={0}>Tất cả cụm rạp</Option>
+            {branches.map((b) => (
+              <Option key={b.id} value={b.id}>{b.name}</Option>
+            ))}
+          </Select>
+          <Select
+            showSearch
+            placeholder="Chọn phim"
+            value={movieId}
+            onChange={(val) => setMovieId(val)}
+            style={{ width: 200 }}
+            optionFilterProp="children"
+          >
+            <Option value={0}>Tất cả phim</Option>
+            {movies.map((m) => (
+              <Option key={m.id} value={m.id}>{m.name}</Option>
+            ))}
+          </Select>
+          <Button type="primary" onClick={handleFilter}>
+            Áp dụng
+          </Button>
+          <Button type="default" onClick={handleExport} style={{ marginLeft: "auto" }}>
+            Xuất báo cáo
+          </Button>
+        </div>
 
-            <Grid item xs={12} md={6} lg={12}>
-               <Paper className={fixedHeightPaper}>
-                 <TicketPerDay />
-               </Paper>
-             </Grid>
-
-             {/* Biểu đồ cột */}
-             <Grid item xs={12} md={6} lg={12}>
-               <Paper className={fixedHeightPaper}>
-                 <ChartSideBySide />
-               </Paper>
-             </Grid>
-
-
-            {/* BIỂU ĐỒ TRÒN*/}
-            <Grid item xs={12} md={4} lg={4}>
-              <Paper className={fixedHeightPaper}>
-                <Deposits />
-              </Paper>
-            </Grid>
-
-            <Grid item xs={12} md={4} lg={4}>
-              <Paper className={fixedHeightPaper}>
-                <DepositsHetHan />
-              </Paper>
-            </Grid>
-
-            <Grid item xs={12} md={4} lg={4}>
-              <Paper className={fixedHeightPaper}>
-                <UserDash />
-              </Paper>
-            </Grid>
-            {/* BIỂU ĐỒ TRÒN*/}
-          
-            <Grid item xs={12}>
-              <Paper className={classes.paper}>
-                <Ranking />
-              </Paper>
-            </Grid>
-
-            {/* Recent Orders */}
-            <Grid item xs={12}>
-              <Paper className={classes.paper}>
-                <Orders />
-              </Paper>
-            </Grid>
+        {/* Tổng quan chỉ số */}
+        <Grid container spacing={3} style={{ marginBottom: 24 }}>
+          <Grid item xs={12} md={4}>
+            <Card style={{ borderRadius: 8 }}>
+              <Statistic 
+                title="Tổng doanh thu" 
+                value={dashboardData.totalIncome || 0} 
+                precision={0} 
+                suffix="VND" 
+                valueStyle={{ color: '#3f8600' }} 
+              />
+            </Card>
           </Grid>
-        {/* </Container> */}
+          <Grid item xs={12} md={4}>
+            <Card style={{ borderRadius: 8 }}>
+              <Statistic 
+                title="Tổng vé bán ra" 
+                value={dashboardData.totalTicket || 0} 
+                valueStyle={{ color: '#1890ff' }} 
+              />
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Card style={{ borderRadius: 8 }}>
+              <Statistic 
+                title="Tỷ lệ lấp đầy trung bình" 
+                value={dashboardData.averageOccupancyRate || 0} 
+                precision={2} 
+                suffix="%" 
+                valueStyle={{ color: '#cf1322' }} 
+              />
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Grid container spacing={3}>
+          {/* Top 5 Phim & User */}
+          <Grid item xs={12} md={6}>
+            <TopMovies data={dashboardData.topMovies} />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Paper className={fixedHeightPaper}>
+              <Ranking userDashboardData={userDashboardData} />
+            </Paper>
+          </Grid>
+
+          {/* Biểu đồ */}
+          <Grid item xs={12} md={6} lg={12}>
+            <Paper className={fixedHeightPaper}>
+              <TicketPerDay dashboardData={dashboardData} />
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={12}>
+            <Paper className={fixedHeightPaper}>
+              <ChartSideBySide dashboardData={dashboardData} />
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={6}>
+            <Paper className={fixedHeightPaper}>
+              <Deposits dashboardData={dashboardData} dates={dates} />
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={6}>
+            <Paper className={fixedHeightPaper}>
+              <UserDash userDashboardData={userDashboardData} dates={dates} />
+            </Paper>
+          </Grid>
+
+          {/* Khách hàng thân thiết */}
+          <Grid item xs={12}>
+            <Paper className={classes.paper}>
+              <Orders userDashboardData={userDashboardData} dates={dates} />
+            </Paper>
+          </Grid>
+        </Grid>
+
         <Copyright />
       </main>
     </div>
   );
 }
-
