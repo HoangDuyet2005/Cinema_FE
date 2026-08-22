@@ -1,81 +1,53 @@
-import React, { useEffect, useState } from "react";
-import Link from "@material-ui/core/Link";
-import { makeStyles } from "@material-ui/core/styles";
-import Typography from "@material-ui/core/Typography";
-import Title from "./Title";
-import billsApi from "./../../../api/billsApi"
-
+import React from "react";
+import { Statistic, Row, Col, Typography } from "antd";
 import { Chart } from "react-google-charts";
 
+const { Title, Text } = Typography;
 
-const useStyles = makeStyles({
-  depositContext: {
-    flex: 1
-  }
-});
+export default function Deposits({ dashboardData, dates }) {
+  const data = dashboardData || {};
 
-export default function Deposits() {
-
-  const [data, setData] = useState({
-    totalIncome:"",
-    totalTicket:"",
-    totalTransaction:"",
-    listDateTran:[],
-  })
-
-  useEffect(() => {
-    billsApi.getBillDashBoard()
-    .then((res) =>{
-      console.log(res);
-      setData(
-        res?.data
-      )
-    })
-    .catch((err) =>{
-      console.log(err);
-    })
-  },[])
-
-  const data1 = [
-    ["Task", "Hours per Day"],
-    ["Số vé được đặt", data?.totalTicket],
-    ["Số vé Giao dịch", data?.totalTransaction],
+  const chartData = [
+    ["Loại", "Số lượng"],
+    ["Số lượng vé", data?.totalTicket || 0],
+    ["Số lượng giao dịch", data?.totalTransaction || 0],
   ];
+
   const options = {
-    title: "Tỷ lệ số vé GD/Số vé được đặt",
+    pieHole: 0.4,
+    is3D: false,
+    colors: ['#1890ff', '#fa8c16'],
+    legend: 'bottom',
+    chartArea: { width: '100%', height: '80%' },
   };
 
-  const classes = useStyles();
   return (
-    <React.Fragment>
-      <Title>Doanh thu đạt được</Title>
-      <Typography component="p" variant="h4">
-        {`${data?.totalIncome.toLocaleString("vi-VI")} VND`}
-        {/* {data?.totalIncome}VND */}
-      </Typography>
-      <Typography color="textSecondary" className={classes.depositContext} >
-        Từ 01/12/2022 - 01/12/2023
-      </Typography>
-      <Typography color="textSecondary" className={classes.depositContext} variant="h6">
-        Số vé được đặt: <span style={{color:"red"}}>{data?.totalTicket}{" "} vé</span>
-        {/* {`${data?.totalTicket?.toLocaleString("vi-VI")} đ`} */}
-      </Typography>
-      <Typography color="textSecondary" className={classes.depositContext} variant="h6">
-        Số GD thành công: <span style={{color:"red"}}>{data?.totalTransaction}</span>
-      </Typography>
-      {/* <div>
-        <Link color="primary" href="javascript:;">
-          Xem chi tiết
-        </Link>
-      </div> */}
-
-    <Chart
-      chartType="PieChart"
-      data={data1}
-      options={options}
-      width={"100%"}
-      height={"200px"}
-    />
-  </React.Fragment>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Title level={5} style={{ color: '#8c8c8c', margin: 0, marginBottom: 16 }}>
+        Tổng Quan Cơ Cấu Giao Dịch
+      </Title>
+      
+      {dates && dates.length === 2 && (
+        <Text type="secondary" style={{ marginBottom: 16 }}>
+          Từ {dates[0].format("DD/MM/YYYY")} - {dates[1].format("DD/MM/YYYY")}
+        </Text>
+      )}
+      
+      {data?.totalTicket === 0 && data?.totalTransaction === 0 ? (
+        <div style={{ textAlign: 'center', padding: '50px 0', color: '#999' }}>Không có dữ liệu hiển thị!</div>
+      ) : (
+        <Row gutter={16} style={{ flexGrow: 1 }}>
+          <Col span={24} style={{ height: '300px' }}>
+            <Chart
+              chartType="PieChart"
+              width="100%"
+              height="100%"
+              data={chartData}
+              options={options}
+            />
+          </Col>
+        </Row>
+      )}
+    </div>
   );
 }

@@ -297,6 +297,39 @@ const bookTicketReducer = (state = initialState, action) => {
       };
     }
 
+    case CREATE_SHOWTIME_REQUEST: {
+      return {
+        ...state,
+        loadingCreateShowtime: true,
+        successCreateShowtime: null,
+        errorCreateShowtime: null,
+      };
+    }
+    case CREATE_SHOWTIME_SUCCESS: {
+      return {
+        ...state,
+        loadingCreateShowtime: false,
+        successCreateShowtime: action.payload.data,
+        errorCreateShowtime: null,
+      };
+    }
+    case CREATE_SHOWTIME_FAIL: {
+      return {
+        ...state,
+        loadingCreateShowtime: false,
+        successCreateShowtime: null,
+        errorCreateShowtime: action.payload.error,
+      };
+    }
+    case RESET_CREATE_SHOWTIME: {
+      return {
+        ...state,
+        loadingCreateShowtime: false,
+        successCreateShowtime: null,
+        errorCreateShowtime: null,
+      };
+    }
+
     default:
       return state;
   }

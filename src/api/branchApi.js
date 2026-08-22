@@ -25,6 +25,14 @@ const branchApi = {
     const path = city ? `/branches/by-city?city=${encodeURIComponent(city)}` : `/branches/by-city`;
     return axiosClient.get(path);
   },
+  addBranch: (data) => {
+    const path = `/branches/create`;
+    return axiosClient.post(path, data);
+  },
+  updateBranch: (id, data) => {
+    const path = `/branches/update/${id}`;
+    return axiosClient.put(path, data);
+  },
 };
 
 export default branchApi;

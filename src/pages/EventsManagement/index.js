@@ -1,493 +1,249 @@
 import React, { useEffect, useState, useRef } from "react";
-
-import { DataGrid, GridToolbar, GridOverlay } from "@material-ui/data-grid";
 import { useSelector, useDispatch } from "react-redux";
-import Button from "@material-ui/core/Button";
-import { useSnackbar } from "notistack";
-import CircularProgress from "@material-ui/core/CircularProgress";
-import SearchIcon from "@material-ui/icons/Search";
-import RefreshButton from "../../utilities/RefreshButton"
-import InputBase from "@material-ui/core/InputBase";
-import Dialog from "@material-ui/core/Dialog";
-import AddBoxIcon from "@material-ui/icons/AddBox";
-import RenderCellExpand from "./RenderCellExpand";
-import slugify from "slugify";
-import useMediaQuery from "@material-ui/core/useMediaQuery";
+import { ProTable } from "@ant-design/pro-components";
+import { Button, Modal, Popconfirm, message, Tag, Image } from "antd";
+import { PlusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 
-import { useStyles, DialogContent, DialogTitle } from "./styles";
 import {
-  getMovieListManagement,
-  deleteMovie,
-  updateMovieUpload,
-  resetMoviesManagement,
-  updateMovie,
-  addMovieUpload,
-} from "../../reducers/actions/Movie";
-import Action from "./Action";
-import ThumbnailYoutube from "./ThumbnailYoutube";
-import Form from "./Form";
+  getEventsList,
+  postAddEvent,
+  putEventUpdate,
+  resetEventList,
+} from "../../reducers/actions/EventsManagement";
+import { deleteMovie } from "../../reducers/actions/Movie";
+
 import FormAddEvent from "./FormAddEvent";
-import Swal from "sweetalert2";
-import { getEventsList, postAddEvent, putEventUpdate, resetEventList } from "../../reducers/actions/EventsManagement";
-import { Tooltip } from "@material-ui/core";
-import renderCellExpand from "./RenderCellExpand";
 import formatDate from "../../utilities/formatDate";
+import slugify from "slugify";
 
-function CustomLoadingOverlay() {
-  return (
-    <GridOverlay>
-      <CircularProgress style={{ margin: "auto" }} />
-    </GridOverlay>
-  );
-}
+export default function EventsManagement() {
+  const dispatch = useDispatch();
+  const [openModal, setOpenModal] = useState(false);
+  const [searchParams, setSearchParams] = useState({});
+  const selectedPhim = useRef(null);
+  const actionRef = useRef();
 
-export default function MoviesManagement() {
-  const [eventListDisplay, setEventListDisplay] = useState([]);
-  console.log("eventListDisplay: ", eventListDisplay);
-  const classes = useStyles();
-  const  {enqueueSnackbar}  = useSnackbar();
-  let {
+  const {
     eventList,
     loadingEventList,
     loadingDelete,
     errorDelete,
     successDelete,
     successUpdateEvent,
-    errorUpdateEvent,
-    loadingUpdateEvent,
     loadingAddEvent,
     successAddEvent,
-    errorAddEvent,
-    // loadingUpdateNoneImageMovie,
-    // successUpdateNoneImageMovie,
-    // errorUpdateNoneImageMovie,
   } = useSelector((state) => state.eventsManagementReducer);
-  const dispatch = useDispatch();
-  const newImageUpdate = useRef("");
-  const callApiChangeImageSuccess = useRef(false);
-  const [valueSearch, setValueSearch] = useState("");
-  const clearSetSearch = useRef(0);
-  const [openModal, setOpenModal] = React.useState(false);
-  const selectedPhim = useRef(null);
-  const isMobile = useMediaQuery("(max-width:768px)");
+
   useEffect(() => {
     if (
       !eventList ||
       successUpdateEvent ||
-      // successUpdateNoneImageMovie ||
       successDelete ||
       errorDelete ||
       successAddEvent
     ) {
       dispatch(getEventsList());
     }
-  }, [
-    // successUpdateEvent,
-    // // successUpdateNoneImageMovie,
-    // successDelete,
-    // errorDelete,
-    // successAddEvent,
-  ]); // khi vừa thêm phim mới xong mà xóa liên backend sẽ báo lỗi xóa không được nhưng thực chất đã xóa thành công > errorDeleteMovie nhưng vẫn tiến hành làm mới lại danh sách
+  }, [successUpdateEvent, successDelete, errorDelete, successAddEvent, dispatch, eventList]);
+
+  useEffect(() => {
+    if (successDelete) message.success("Đã xóa sự kiện thành công!");
+    if (successUpdateEvent) message.success("Cập nhật sự kiện thành công!");
+    if (successAddEvent) message.success("Thêm sự kiện thành công!");
+  }, [successDelete, successUpdateEvent, successAddEvent]);
 
   useEffect(() => {
     return () => {
       dispatch(resetEventList());
     };
-  }, []);
-  useEffect(() => {
-    if (eventList) {
-      let newEventListDisplay = eventList?.data?.content?.map((event) => ({
-        ...event,
-        hanhDong: "",
-        id: event.id,
-        createdAt:`${formatDate(event?.createdAt.slice(
-          0,
-          10
-        )).dateFull}, ${event?.createdAt.slice(11, 19)}`,
-      }));
-      setEventListDisplay(newEventListDisplay);
-    }
-  }, [eventList]);
+  }, [dispatch]);
 
-  useEffect(() => {
-    // delete movie xong thì thông báo
-    if (errorDelete === "Delete Success but backend return error") {
-      successDelete = "Delete Success !";
-    }
-    if (successDelete) {
-      enqueueSnackbar(successDelete, { variant: "success" });
-      return;
-    }
-    if (errorDelete) {
-      enqueueSnackbar(errorDelete, { variant: "error" });
-    }
-  }, [errorDelete, successDelete]);
-
-  // useEffect(() => {
-  //   if (successUpdate || successUpdateNoneImageMovie) {
-  //     callApiChangeImageSuccess.current = true;
-  //     enqueueSnackbar(
-  //       `Update successfully: ${successUpdateMovie.name ?? ""}${
-  //         successUpdateNoneImageMovie.name ?? ""
-  //       }`,
-  //       { variant: "success" }
-  //     );
-  //   }
-  //   if (errorUpdateMovie || errorUpdateNoneImageMovie) {
-  //     callApiChangeImageSuccess.current = false;
-  //     enqueueSnackbar(
-  //       `${errorUpdateMovie ?? ""}${errorUpdateNoneImageMovie ?? ""}`,
-  //       { variant: "error" }
-  //     );
-  //   }
-  // }, [
-  //   successUpdateMovie,
-  //   errorUpdateMovie,
-  //   successUpdateNoneImageMovie,
-  //   errorUpdateNoneImageMovie,
-  // ]);
-
-  useEffect(() => {
-    if (successAddEvent) {
-      enqueueSnackbar(
-        `Thêm mới thành công: ${successAddEvent.brief}`,
-        { variant: "success" }
-      );
-    }
-    if (errorAddEvent) {
-      enqueueSnackbar(errorAddEvent, { variant: "error" });
-    }
-  }, [successAddEvent, errorAddEvent]);
-
-  // xóa một phim
   const handleDeleteOne = (maPhim) => {
-    const swalWithBootstrapButtons = Swal.mixin({
-      customClass: {
-        confirmButton: 'btn btn-success',
-        cancelButton: 'btn btn-danger'
-      },
-      buttonsStyling: false
-    })
-    
-    swalWithBootstrapButtons.fire({
-      title: 'Bạn có chắc không?',
-      text: "Bạn sẽ không thể trở về nếu chọn!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Vâng, xóa!',
-      cancelButtonText: 'Hủy!',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.isConfirmed) {
-        if (!loadingDelete) {
-          // nếu click xóa liên tục một user
-          dispatch(deleteMovie(maPhim));
-          // window.location.reload();
-        }
-        swalWithBootstrapButtons.fire(
-          'Đã xoá!',
-          'Bạn đã xoá nó.',
-          'success'
-        )
-      } else if (
-        /* Read more about handling dismissals below */
-        result.dismiss === Swal.DismissReason.cancel
-      ) {
-        swalWithBootstrapButtons.fire(
-          'Đã huỷ',
-          'Huỷ đặt hàng này :)',
-          'error'
-        )
-      }
-    })
-
+    if (!loadingDelete) {
+      // NOTE: Using deleteMovie action as per the original code logic
+      dispatch(deleteMovie(maPhim));
+    }
   };
+
   const handleEdit = (eventItem) => {
     selectedPhim.current = eventItem;
     setOpenModal(true);
   };
 
-  const onUpdate = (movieObj, hinhAnh, fakeImage) => {
-  dispatch(putEventUpdate(movieObj));
-  setOpenModal(false);
-  // enqueueSnackbar("Thành công", { variant: "success" });
-  }
-
-  const handleReload = () => {
-    dispatch(getEventsList());
-  }
-
-  const onAddMovie = (movieObj) => {
-    console.log("Dữ liệu event thêm: ", movieObj);
-    if (!loadingAddEvent) {
-      dispatch(postAddEvent(movieObj));
-      // enqueueSnackbar("Thành công", { variant: "success" });
-    }
-    setOpenModal(false);
-  };
   const handleAddMovie = () => {
-    const emtySelectedEvent = {
-      brief:"",
+    selectedPhim.current = {
+      brief: "",
       description: "",
-      image1 : "",
-      title:"",
-      mainImage:"",
-      status:"",
-      type:"",
+      image1: "",
+      title: "",
+      mainImage: "",
+      status: "",
+      type: "",
     };
-    selectedPhim.current = emtySelectedEvent;
     setOpenModal(true);
   };
 
-  const handleInputSearchChange = (props) => {
-    clearTimeout(clearSetSearch.current);
-    clearSetSearch.current = setTimeout(() => {
-      setValueSearch(props);
-    }, 500);
+  const onUpdate = (movieObj) => {
+    dispatch(putEventUpdate(movieObj));
+    setOpenModal(false);
   };
 
-  const onFilter = () => {
-    // dùng useCallback, slugify bỏ dấu tiếng việt
-    let searchEventListDisplay = eventListDisplay?.filter((event) => {
-      const matchTenPhim =
-        slugify(event?.brief ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      const matchMoTa =
-        slugify(event?.status ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      const matchNgayKhoiChieu =
-        slugify(event?.type ?? "", modifySlugify)?.indexOf(
-          slugify(valueSearch, modifySlugify)
-        ) !== -1;
-      return matchTenPhim || matchMoTa || matchNgayKhoiChieu;
-    });
-    if (newImageUpdate.current && callApiChangeImageSuccess.current) {
-      // hiển thị hình bằng base64 thay vì url, lỗi react không hiển thị đúng hình mới cập nhật(đã cập hình thanh công nhưng url backend trả về giữ nguyên đường dẫn)
-      searchEventListDisplay = searchEventListDisplay?.map((event) => {
-        if (event.id === newImageUpdate.current.id) {
-          return { ...event, smallImageURl: newImageUpdate.current.smallImageURl};
-        }
-        return event;
-      });
+  const onAddMovie = (movieObj) => {
+    if (!loadingAddEvent) {
+      dispatch(postAddEvent(movieObj));
     }
-    return searchEventListDisplay;
+    setOpenModal(false);
+  };
+
+  const modifySlugify = { lower: true, locale: "vi" };
+  const getFilteredData = () => {
+    if (!eventList?.data?.content) return [];
+    return eventList.data.content.filter((event) => {
+      if (!searchParams.title) return true;
+      const matchTitle = slugify(event?.title ?? "", modifySlugify)?.indexOf(slugify(searchParams.title, modifySlugify)) !== -1;
+      return matchTitle;
+    });
+  };
+
+  const renderStatus = (status) => {
+    switch (status) {
+      case "DENY":
+        return <Tag color="red">Bị từ chối</Tag>;
+      case "CREATE":
+        return <Tag color="gold">Chờ duyệt</Tag>;
+      case "DELETE":
+        return <Tag color="default">Đã xóa</Tag>;
+      default:
+        return <Tag color="green">Đã được duyệt</Tag>;
+    }
   };
 
   const columns = [
     {
-      field: "hanhDong",
-      headerName: "Action",
-      width: 100,
-      renderCell: (params) => (
-        <Action
-          onEdit={handleEdit}
-          // onDeleted={handleDeleteOne}
-          phimItem={params.row}
+      title: "Hình ảnh",
+      dataIndex: "mainImage",
+      search: false,
+      render: (text) => (
+        <Image
+          width={100}
+          height={60}
+          src={text}
+          fallback="https://via.placeholder.com/100x60?text=No+Image"
+          style={{ objectFit: "cover", borderRadius: "4px" }}
         />
       ),
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
     },
     {
-      field: "brief",
-      headerName: "Tên sự kiện",
-      width: 250,
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-      hide: true,
+      title: "Tiêu đề",
+      dataIndex: "title",
+      copyable: true,
+      ellipsis: true,
+      sorter: (a, b) => (a.title || "").localeCompare(b.title || ""),
     },
     {
-      field: "title",
-      headerName: "Tiêu đề",
-      width: 380,
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
+      title: "Loại",
+      dataIndex: "type",
+      search: false,
+      render: (text) => <Tag color="blue">{text}</Tag>,
+      sorter: (a, b) => (a.type || "").localeCompare(b.type || ""),
     },
     {
-      field: "createdBy",
-      headerName: "Người viết",
-      width: 150,
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
+      title: "Người viết",
+      dataIndex: "createdBy",
+      search: false,
+      sorter: (a, b) => (a.createdBy || "").localeCompare(b.createdBy || ""),
     },
     {
-      field: "description",
-      headerName: "Mô tả",
-      width: 250,
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-      hide:true,
+      title: "Trạng thái",
+      dataIndex: "status",
+      search: false,
+      render: (text) => renderStatus(text),
+      sorter: (a, b) => (a.status || "").localeCompare(b.status || ""),
     },
     {
-      field: "mainImage",
-      headerName: "Hình ảnh",
-      width: 200,
-      // renderCell: (params) => (
-      //   <Tooltip title={params.row.mainImage}>
-      //     <img
-      //       style={{
-      //         maxWidth: "100%",
-      //         height: "100%",
-      //         borderRadius: 4,
-      //         marginRight: 15,
-      //       }}
-      //       src={params.row.mainImage}
-      //     />
-      //   </Tooltip>
-      // ),
-      renderCell: (params) => RenderCellExpand(params),
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      search: false,
+      render: (text) => (text ? formatDate(text.slice(0, 10)).dateFull : ""),
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     },
     {
-      field: "status",
-      headerName: "Trạng thái",
-      width: 180,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      // renderCell: RenderCellExpand,
-      renderCell: (params) => {
-        if (params.row.status === "DENY") {
-          return "Bị từ chối"
-        } else if (params.row.status === "CREATE")
-        {
-          return "Chờ duyệt"
-        } else if (params.row.status === "DELETE")
-        {
-          return "Đã xóa"
-        }
-        else return "Đã được duyệt"
-      },
-      hide: true,
+      title: "Hành động",
+      valueType: "option",
+      render: (text, record) => [
+        <Button
+          key="edit"
+          type="primary"
+          icon={<EditOutlined />}
+          size="small"
+          onClick={() => handleEdit(record)}
+        >
+          Sửa
+        </Button>,
+        <Popconfirm
+          key="delete"
+          title="Bạn có chắc chắn muốn xóa sự kiện này?"
+          onConfirm={() => handleDeleteOne(record.id)}
+          okText="Có"
+          cancelText="Không"
+        >
+          <Button type="primary" danger icon={<DeleteOutlined />} size="small">
+            Xóa
+          </Button>
+        </Popconfirm>,
+      ],
     },
-    {
-      field: "type",
-      headerName: "Loại",
-      width: 150,
-      headerAlign: "center",
-      align: "center",
-      headerClassName: "custom-header",
-      renderCell: RenderCellExpand,
-    },
-    {
-      field: "createdAt",
-      headerName: "Ngày tạo",
-      width: 280,
-      type: "dateTime",
-      headerAlign: "center",
-      align: "left",
-      headerClassName: "custom-header",
-      // renderCell: RenderCellExpand,
-      // hide: true,
-    },
-    // {
-    //   field: "releaseDate",
-    //   headerName: "Release Date",
-    //   width: 160,
-    //   type: "date",
-    //   headerAlign: "center",
-    //   align: "center",
-    //   headerClassName: "custom-header",
-    //   valueFormatter: (params) => params.value.slice(0, 10),
-    // },
-    // {
-    //   field: "rated",
-    //   headerName: "Rated",
-    //   width: 120,
-    //   headerAlign: "center",
-    //   align: "center",
-    //   headerClassName: "custom-header",
-    // },
-    // { field: "id", hide: true, width: 130 },
-    // { field: "categories", hide: true, width: 130 },
-    // { field: "duration", hide: true, width: 200, renderCell: RenderCellExpand },
   ];
-  const modifySlugify = { lower: true, locale: "vi" };
-  return (
-    <div style={{ height: "80vh", width: "100%", backgroundColor:"white"}}>
-      <div className={classes.control}>
-        <div className="row">
-          <div className={`col-3 col-md-4 ${classes.itemCtro}`}>
-            <Button
-              variant="contained"
-              color="primary"
-              className={classes.addMovie}
-              onClick={handleAddMovie}
-              disabled={loadingAddEvent}
-              startIcon={<AddBoxIcon />}
-            >
-              Thêm sự kiện, khuyến mãi
-            </Button>
-          </div>
-          <div className={`col-12 col-md-2 ${classes.itemCtro}`} onClick={handleReload}>
-            <RefreshButton />
-          </div>
-          <div className={`col-12 col-md-4 ${classes.itemCtro}`}>
-            <div className={classes.search}>
-              <div className={classes.searchIcon}>
-                <SearchIcon />
-              </div>
-              <InputBase
-                placeholder="Tìm kiếm..."
-                classes={{
-                  root: classes.inputRoot,
-                  input: classes.inputInput,
-                }}
-                style={{color:"black"}}
-                onChange={(evt) => handleInputSearchChange(evt.target.value)}
-              />
-            </div>
-          </div>
 
-        </div>
-      </div>
-      <DataGrid
-        className={classes.rootDataGrid}
-        rows={onFilter()}
+  return (
+    <div style={{ background: "#fff", padding: 24, borderRadius: 8 }}>
+      <ProTable
         columns={columns}
-        pageSize={25}
-        rowsPerPageOptions={[10, 25, 50]}
-        // hiện loading khi
-        loading={
-          loadingUpdateEvent ||
-          loadingDelete ||
-          loadingEventList 
-          // loadingUpdateNoneImageMovie
-        }
-        components={{
-          LoadingOverlay: CustomLoadingOverlay,
-          Toolbar: GridToolbar,
+        actionRef={actionRef}
+        dataSource={getFilteredData()}
+        rowKey="id"
+        loading={loadingEventList}
+        onSubmit={(params) => setSearchParams(params)}
+        onReset={() => setSearchParams({})}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
         }}
-        // sort
-        sortModel={[{ field: "brief", sort: "asc" }]}
+        scroll={{ x: 'max-content' }}
+        search={{
+          labelWidth: "auto",
+        }}
+        dateFormatter="string"
+        headerTitle="Danh sách Sự kiện"
+        toolBarRender={() => [
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAddMovie}
+          >
+            Thêm sự kiện
+          </Button>,
+        ]}
       />
-      <Dialog open={openModal}>
-        <DialogTitle onClose={() => setOpenModal(false)}>
-          {selectedPhim?.current?.brief
-            ? `Chỉnh sửa: ${selectedPhim?.current?.brief}`
-            : "Tạo mới"}
-        </DialogTitle>
-        <DialogContent dividers>
+
+      <Modal
+        title={selectedPhim?.current?.brief ? `Chỉnh sửa: ${selectedPhim?.current?.brief}` : "Tạo sự kiện mới"}
+        open={openModal}
+        onCancel={() => setOpenModal(false)}
+        footer={null}
+        width={800}
+        destroyOnClose
+      >
+        {openModal && (
           <FormAddEvent
+            key={selectedPhim.current?.id || "add_event"}
             selectedPhim={selectedPhim.current}
             onUpdate={onUpdate}
             onAddMovie={onAddMovie}
           />
-        </DialogContent>
-      </Dialog>
+        )}
+      </Modal>
     </div>
   );
 }

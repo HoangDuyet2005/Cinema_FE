@@ -46,9 +46,8 @@ const bookingApi = {
     return axiosClient.get(path);
   },
 
-  postTaoLichChieu: ({branchId, movieId, price, roomId, startDate, startTime}) => {
-    const path = `/schedule/add?movieId=${movieId}&branchId=${branchId}&roomId=${roomId}&startDate=${startDate}&startTime=${startTime}&price=${price}`;
-    return axiosClient.post(path);
+  postTaoLichChieu: (data) => {
+    return axiosClient.post("/schedule/add", null, { params: data });
   },
 };
 

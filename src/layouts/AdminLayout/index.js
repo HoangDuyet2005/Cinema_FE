@@ -1,113 +1,209 @@
-
 import React, { useEffect, useState } from 'react';
-
-import { SnackbarProvider } from 'notistack';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
+import 'antd/dist/antd.css';
+import { useHistory, useLocation, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
+import ProLayout from '@ant-design/pro-layout';
+import { Dropdown, Avatar, Spin, Menu, ConfigProvider, theme, Switch } from 'antd';
+import viVN from 'antd/locale/vi_VN';
+import {
+  DashboardOutlined,
+  QrcodeOutlined,
+  VideoCameraOutlined,
+  UserOutlined,
+  ShopOutlined,
+  TableOutlined,
+  FileTextOutlined,
+  CommentOutlined,
+  CalendarOutlined,
+  ContainerOutlined,
+  ScheduleOutlined,
+  LogoutOutlined,
+  BulbOutlined,
+  BulbFilled,
+} from '@ant-design/icons';
+import { SnackbarProvider } from 'notistack';
 
-import NavBar from './NavBar';
-import TopBar from './TopBar';
 import usersApi from '../../api/usersApi';
-import { GET_INFO_USER_FAIL, GET_INFO_USER_REQUEST, GET_INFO_USER_SUCCESS } from '../../reducers/constants/UsersManagement';
 import { LOGIN_FAIL, LOGIN_SUCCESS } from '../../reducers/constants/Auth';
 
+const menuData = [
+  {
+    path: '/admin/dashboard',
+    name: 'Thống kê',
+    icon: <DashboardOutlined />,
+  },
+  {
+    path: '/admin/check-ticket',
+    name: 'Soát vé & In vé',
+    icon: <QrcodeOutlined />,
+  },
+  {
+    path: '/admin/movies',
+    name: 'Quản lý phim',
+    icon: <VideoCameraOutlined />,
+  },
+  {
+    path: '/admin/users',
+    name: 'Quản lý người dùng',
+    icon: <UserOutlined />,
+  },
+  {
+    path: '/admin/branch',
+    name: 'Quản lý chi nhánh rạp',
+    icon: <ShopOutlined />,
+  },
+  {
+    path: '/admin/seat-config',
+    name: 'Cấu hình sơ đồ ghế',
+    icon: <TableOutlined />,
+  },
+  {
+    path: '/admin/bills',
+    name: 'Quản lý hóa đơn',
+    icon: <FileTextOutlined />,
+  },
+  {
+    path: '/admin/reviews',
+    name: 'Quản lý Review',
+    icon: <CommentOutlined />,
+  },
+  {
+    path: '/admin/events',
+    name: 'Quản lý sự kiện',
+    icon: <CalendarOutlined />,
+  },
+  {
+    path: '/admin/ticket',
+    name: 'Quản lý vé',
+    icon: <ContainerOutlined />,
+  },
+  {
+    path: '/admin/showtimes',
+    name: 'Quản lý lịch chiếu',
+    icon: <ScheduleOutlined />,
+  }
+];
+
 export default function AdminLayout(props) {
-  const [isMobileNavOpen, setMobileNavOpen] = useState(false);
-  // const isMobile = useMediaQuery('(max-width:768px)');
+  const history = useHistory();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.authReducer);
-  // console.log(currentUser);
-  // const { currentUser } = useSelector((state) => state.usersManagementReducer);
-  // console.log(currentUser);
-  const [userAdmin, setUserAdmin]= useState();
-  // if (currentUser?.maLoaiNguoiDung !== "QuanTri") { // nếu không phải tài khoản quản trị thì ẩn đi giao diện AdminLayout, vẫn truyền vào children để hiện thông báo trong children
-  //   return <>{props.children}</>
-  // }
+  const [cUser, setCUser] = useState();
+  
+  // State quản lý Dark Mode
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // useEffect(() => {
-  //   dispatch({
-  //     type: GET_INFO_USER_REQUEST
-  //   })
-  //   usersApi.getThongTinTaiKhoan()
-  //     .then(result => {
-  //       console.log("getThongTinTaiKhoan: ", result);
-  //       setUserAdmin(result.data.data)
-  //       dispatch({
-  //         type: GET_INFO_USER_SUCCESS,
-  //         payload: {
-  //           data: result.data.data,
-  //         }
-  //       })
-  //     }
-  //     )
-  //     .catch(
-  //       error => {
-  //         dispatch({
-  //           type: GET_INFO_USER_FAIL,
-  //           payload: {
-  //             error: error.response?.data?.data ? error.response.data?.data : error.message,
-  //           }
-  //         })
-  //       }
-  //     )
-  // },[])
-  const [cUser , setCUser] = useState();
   useEffect(() => {
     usersApi.getThongTinTaiKhoan()
-    .then((response) =>{
-      // console.log("AMIN LAYOUT: ", response?.data);
-      setCUser(response?.data);
-      dispatch({
-        type: LOGIN_SUCCESS,
-        payload: {
-          data: response?.data,
-        },
+      .then((response) => {
+        setCUser(response?.data);
+        dispatch({
+          type: LOGIN_SUCCESS,
+          payload: {
+            data: response?.data,
+          },
+        });
+      })
+      .catch((error) => {
+        dispatch({
+          type: LOGIN_FAIL,
+          payload: {
+            error: error.response?.data?.data ? error.response?.data?.data : error.message,
+          },
+        });
       });
-    })
-    .catch((error) => {
-      // console.log(error);
-      dispatch({
-        type: LOGIN_FAIL,
-        payload: {
-          error: error.response?.data?.data ? error.response?.data?.data : error.message,
-        },
-      });
-    })
-    // console.log(setUserLog.data);
-    // localStorage.setItem('userInfo', JSON.stringify({...cUser}))
-    // localStorage.setItem('userLogin', JSON.stringify(...setUserLog.data))
-  },[])
+  }, [dispatch]);
 
-  // console.log(cUser);
-  // currentUser = userAdmin;
-  // if (currentUser?.data?.role === "[ROLE_ADMIN]") { // nếu không phải tài khoản quản trị thì ẩn đi giao diện AdminLayout, vẫn truyền vào children để hiện thông báo trong children
-  //   return <>{props.children}</>
-  // }
-  if (!currentUser?.data?.role?.includes("ROLE_ADMIN")) { // nếu không phải tài khoản quản trị thì ẩn đi giao diện AdminLayout, vẫn truyền vào children để hiện thông báo trong children
-    return <>{props.children}</>
+  if (!currentUser?.data?.role?.includes("ROLE_ADMIN")) {
+    return <>{props.children}</>;
   }
-  return (
-    // package notistack: popup thông báo nhỏ gọn
-    <SnackbarProvider maxSnack={3}>
-      <>
-      {/* <TopBar onMobileNavOpen={() => setMobileNavOpen(true)} style={{backgroundColor:"black"}}/> */}
-      <TopBar style={{backgroundColor:"black"}}/>
-      <div className="row">
-        <div style={{ width: 255 , backgroundColor:"white"}} >
-          {/* đây là phần NavBar nằm bên trái, có thể đóng mở khi màn hình nhỏ */}
-          <NavBar
-            // onMobileClose={() => setMobileNavOpen(false)}
-            // openMobile={isMobileNavOpen}
-          />
-        </div>
-        {/* <div style={{ width: isMobile ? "100%" : "calc(100% - 255px)", backgroundColor:"white", height:"100vh" }}> */}
-        <div style={{ width: "calc(100% - 255px)", backgroundColor:"white", height:"100vh" }}>
-          {/* đây là nội dung chính: UserManagement, MoviesManagement, ReateShowtime */}
-          {props.children}
-        </div>
-      </div>
-      </>
-    </SnackbarProvider>
-  )
-}
 
+  const userMenuItems = [
+    {
+      key: 'profile',
+      label: <Link to="/taikhoan">Thông tin cá nhân</Link>,
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Đăng xuất',
+      onClick: () => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("userInfo");
+        window.location.reload();
+      },
+    },
+  ];
+
+  return (
+    <ConfigProvider 
+      locale={viVN}
+      theme={{
+        algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+      }}
+    >
+      <SnackbarProvider maxSnack={3}>
+        <div style={{ minHeight: '100vh', background: isDarkMode ? '#141414' : '#f0f2f5' }}>
+          <ProLayout
+            title="Cinema Admin"
+            logo="https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg"
+            layout="mix"
+            navTheme={isDarkMode ? 'realDark' : 'light'}
+            fixSiderbar
+            fixedHeader
+            route={{ routes: menuData }}
+            location={{
+              pathname: location.pathname,
+            }}
+            menuItemRender={(item, dom) => (
+              <a
+                onClick={(e) => {
+                  e.preventDefault();
+                  history.push(item.path);
+                }}
+              >
+                {dom}
+              </a>
+            )}
+            rightContentRender={() => (
+              <div style={{ display: 'flex', alignItems: 'center', marginRight: 16, gap: '16px' }}>
+                <Switch 
+                  checked={isDarkMode} 
+                  onChange={(checked) => setIsDarkMode(checked)} 
+                  checkedChildren={<BulbOutlined />} 
+                  unCheckedChildren={<BulbFilled />}
+                />
+                
+                {currentUser?.data ? (
+                  <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                      <Avatar 
+                        src={currentUser?.data?.image || "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png"} 
+                        size="small" 
+                        style={{ marginRight: 8 }}
+                      />
+                      <span style={{ color: isDarkMode ? '#fff' : 'inherit' }}>
+                        {currentUser?.data?.name}
+                      </span>
+                    </div>
+                  </Dropdown>
+                ) : (
+                  <Spin size="small" />
+                )}
+              </div>
+            )}
+          >
+            <div style={{ 
+              padding: 24, 
+              background: isDarkMode ? '#141414' : '#fff', 
+              minHeight: 'calc(100vh - 120px)' 
+            }}>
+              {props.children}
+            </div>
+          </ProLayout>
+        </div>
+      </SnackbarProvider>
+    </ConfigProvider>
+  );
+}
