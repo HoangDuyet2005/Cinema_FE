@@ -52,14 +52,30 @@ export default function ListSeat() {
         .then((res) => {
           const list = res.data?.data || res.data || [];
           if (Array.isArray(list)) {
-            // Lọc chính xác cùng phim, cùng rạp, cùng ngày
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+            const currentTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
+
+            // Lọc chính xác cùng phim, cùng rạp, cùng ngày VÀ chỉ lấy suất chiếu chưa qua giờ (hoặc suất chiếu hiện tại đang chọn)
             const filtered = list
-              .filter(
-                (s) =>
-                  Number(s.movie?.id || s.movieId) === Number(movieId) &&
-                  Number(s.branch?.id || s.branchId) === Number(branchId) &&
-                  s.startDate === dateStr
-              )
+              .filter((s) => {
+                const isMatchMovie = Number(s.movie?.id || s.movieId) === Number(movieId);
+                const isMatchBranch = Number(s.branch?.id || s.branchId) === Number(branchId);
+                const sDate = s.startDate ? s.startDate.slice(0, 10) : "";
+                const isMatchDate = sDate === dateStr;
+
+                if (!isMatchMovie || !isMatchBranch || !isMatchDate) return false;
+
+                // Suất chiếu hiện tại người dùng đang xem
+                const isCurrentSchedule = Number(s.id) === Number(param.maLichChieu);
+                if (isCurrentSchedule) return true;
+
+                // Lọc bỏ các suất chiếu trong quá khứ
+                if (sDate < todayStr) return false;
+                if (sDate === todayStr && s.startTime && s.startTime < currentTimeStr) return false;
+
+                return true;
+              })
               .sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
             setSiblingSchedules(filtered);
           }
