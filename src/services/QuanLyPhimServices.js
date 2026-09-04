@@ -1,4 +1,5 @@
 ﻿import axios from "axios";
+import { BASE_URL } from "../constants/config";
 // import { groupID, movie } from "../config/setting";
 export class QuanLyPhimServices {
   layTinTuc = () => {
@@ -9,26 +10,26 @@ export class QuanLyPhimServices {
   };
   layReviewChuaDuyet = () => {
     return axios({
-      url: "http://localhost:8080/api/article/getAll?status=CREATE",
+      url: `${BASE_URL}/article/getAll?status=CREATE`,
       method: "GET",
     });
   };
   layReviewDuocDuyet = () => {
     return axios({
-      url: "http://localhost:8080/api/article/getAll?status=APPROVE",
+      url: `${BASE_URL}/article/getAll?status=APPROVE`,
       method: "GET",
     });
   };
   layChiTietTinTuc = (maTinTuc) => {
     return axios({
-      url: `http://localhost:8080/api/article/getDetail?id=${maTinTuc}`,
+      url: `${BASE_URL}/article/getDetail?id=${maTinTuc}`,
       method: "GET",
     });
   };
 
   layChiTietTinTucSlug = (maTinTuc) => {
     return axios({
-      url: `http://localhost:8080/api/article/getDetail/${maTinTuc}`,
+      url: `${BASE_URL}/article/getDetail/${maTinTuc}`,
       method: "GET",
     });
   };

@@ -337,7 +337,8 @@ export default function Index() {
 
   const handlePayBill = async (amount, billId) => {
     try {
-      const res = await bookingApi.createPaymentUrl(amount, billId);
+      // amount không còn được gửi cho BE nữa - BE lấy giá thật của hóa đơn theo billId
+      const res = await bookingApi.createPaymentUrl({ bookingInfo: `PAY_BILL_${billId}`, billId });
       if (res?.data?.url) {
         window.location.href = res.data.url;
       }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import useStyles from "./style";
 import formatDate from "../../../utilities/formatDate";
+import { BASE_URL } from "../../../constants/config";
 import {
   SET_DATA_PAYMENT,
   SET_READY_PAYMENT,
@@ -312,7 +313,7 @@ export default function PayMent() {
           userId: Number(currentUserId),
         });
         if (navigator.sendBeacon) {
-          navigator.sendBeacon("http://localhost:8080/api/seats/release-seats", new Blob([data], { type: "application/json" }));
+          navigator.sendBeacon(`${BASE_URL}/seats/release-seats`, new Blob([data], { type: "application/json" }));
         }
       }
     };
@@ -380,8 +381,12 @@ export default function PayMent() {
         try {
           const listSeatIds = listSeat.filter((s) => s.selected).map((s) => s.id);
           const bookingInfo = `PAY_${currentUserId}_${param.maLichChieu}_${listSeatIds.join("-")}`;
-          
-          const paymentRes = await bookingApi.createPaymentUrl(finalAmount, bookingInfo);
+
+          const paymentRes = await bookingApi.createPaymentUrl({
+            bookingInfo,
+            scheduleId: param.maLichChieu,
+            listSeatIds,
+          });
           const paymentUrl = paymentRes?.data?.url;
 
           if (paymentUrl) {

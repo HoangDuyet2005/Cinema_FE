@@ -41,9 +41,24 @@ const bookingApi = {
     return axiosClient.post(path, data);
   },
 
-  createPaymentUrl: (amount, bookingInfo) => {
-    const path = `/payment/create_payment?amount=${amount}&bookingInfo=${bookingInfo}`;
-    return axiosClient.get(path);
+  // Không còn gửi "amount" cho BE nữa - số tiền do BE tự tính lại từ scheduleId/listSeatIds/foods
+  // (đặt vé lần đầu) hoặc từ billId (thanh toán lại hóa đơn đã tồn tại), tránh bị sửa giá ở client.
+  createPaymentUrl: ({ bookingInfo, billId, scheduleId, listSeatIds, foods }) => {
+    const params = new URLSearchParams();
+    params.append("bookingInfo", bookingInfo);
+    if (billId != null) params.append("billId", billId);
+    if (scheduleId != null) params.append("scheduleId", scheduleId);
+    (listSeatIds || []).forEach((id) => params.append("listSeatIds", id));
+    (foods || []).forEach((f) => {
+      params.append("foodIds", f.foodId);
+      params.append("foodQuantities", f.quantity);
+    });
+    return axiosClient.get(`/payment/create_payment?${params.toString()}`);
+  },
+
+  // Xác minh chữ ký VNPay của các tham số trả về trước khi coi giao dịch là thành công
+  verifyPaymentReturn: (searchParams) => {
+    return axiosClient.get(`/payment/verify-return?${searchParams.toString()}`);
   },
 
   postTaoLichChieu: (data) => {

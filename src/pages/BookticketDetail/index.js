@@ -7,7 +7,7 @@ import Mobile from "./Mobile";
 import Modal from "./Modal";
 import Header from "../../layouts/MainLayout/Header";
 import Footer from "../../components/Footer/Footer";
-import { DISPLAY_MOBILE_BOOKTICKET } from "../../constants/config";
+import { DISPLAY_MOBILE_BOOKTICKET, BASE_URL } from "../../constants/config";
 import usersApi from "../../api/usersApi";
 import bookingApi from "../../api/bookingApi";
 import billsApi from "../../api/billsApi";
@@ -179,7 +179,7 @@ export default function BookTicketsDetail() {
         const blob = new Blob([payload], { type: "application/json" });
 
         if (navigator.sendBeacon) {
-          navigator.sendBeacon("http://localhost:8080/api/seats/release-seats", blob);
+          navigator.sendBeacon(`${BASE_URL}/seats/release-seats`, blob);
         }
       }
     };

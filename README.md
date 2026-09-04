@@ -20,7 +20,13 @@ Do dự án sử dụng các gói thư viện tương thích React 17, hãy cài
 npm install --legacy-peer-deps
 ```
 
-### 2. Khởi chạy ứng dụng (Development Server)
+### 2. Cấu hình biến môi trường
+`BASE_URL` gọi Backend API được đọc từ `REACT_APP_API_URL` trong file `.env` (mặc định trỏ về
+`http://localhost:8080/api`). Khi build cho production, đổi giá trị này bằng cách tạo file
+`.env.production.local` (không commit) hoặc set biến môi trường `REACT_APP_API_URL` trên hosting -
+KHÔNG sửa trực tiếp trong `src/constants/config.js` nữa.
+
+### 3. Khởi chạy ứng dụng (Development Server)
 ```bash
 npm start
 ```

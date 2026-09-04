@@ -13,6 +13,7 @@ import { useParams } from "react-router-dom";
 import bookingApi from "../../../api/bookingApi";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
+import { BASE_URL } from "../../../constants/config";
 import Swal from "sweetalert2";
 
 export default function ListSeat() {
@@ -67,7 +68,7 @@ export default function ListSeat() {
     let stompClient = null;
     let socket = null;
     try {
-      socket = new SockJS("http://localhost:8080/ws-cinema");
+      socket = new SockJS(`${BASE_URL.replace(/\/api\/?$/, "")}/ws-cinema`);
       stompClient = Stomp.over(socket);
       stompClient.debug = () => {};
 

@@ -6,10 +6,10 @@ const currentUser = localStorage.getItem("user")
   : null;
 const avtIdUser = currentUser ? currentUser?.data?.avtIdUser : nanoid(10);
 export { avtIdUser };
-// export const BASE_URL = "https://WORLD CINEMA.azurewebsites.net/api";
-export const BASE_URL = "http://localhost:8080/api";
-// export const BASE_URL = "http://14.225.205.235:8080/api";
-// export const BASE_URL = "https://api-WORLD CINEMAnew.tiktzuki.com/api";
+// URL Backend API lấy từ biến môi trường REACT_APP_API_URL (xem file .env), không hardcode nữa.
+// Đổi giá trị cho từng môi trường bằng .env.production.local hoặc biến môi trường của hosting,
+// thay vì sửa trực tiếp trong file này (trước đây phải comment/uncomment tay dễ quên khi build production).
+export const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
 export const FAKE_AVATAR = `https://vnn-imgs-f.vgcloud.vn/2020/03/23/11/trend-avatar-11.jpg`;
 export const UNKNOW_USER = "https://cdn4.vectorstock.com/i/1000x1000/76/28/unknown-person-user-icon-for-web-vector-34757628.jpg";
 export const DISPLAY_MOBILE_BOOKTICKET = "(max-width:768px)";

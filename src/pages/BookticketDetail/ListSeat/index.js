@@ -5,6 +5,7 @@ import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
 import Swal from "sweetalert2";
 import bookingApi from "../../../api/bookingApi";
+import { BASE_URL } from "../../../constants/config";
 import {
   CHANGE_LISTSEAT,
   SET_ALERT_OVER10,
@@ -89,7 +90,7 @@ export default function ListSeat() {
     let stompClient = null;
     let socket = null;
     try {
-      socket = new SockJS("http://localhost:8080/ws-cinema");
+      socket = new SockJS(`${BASE_URL.replace(/\/api\/?$/, "")}/ws-cinema`);
       stompClient = Stomp.over(socket);
       stompClient.debug = () => {};
 

@@ -186,8 +186,14 @@ export default function PayMent() {
     const orderInfo = `PAY_${userId}_${param.maLichChieu}_${selectedSeatIds.join("-")}_${foodsStr}`;
 
     // Tạo URL thanh toán và chuyển hướng trực tiếp sang cổng VNPay
+    // (finalTotal không còn được gửi cho BE - BE tự tính lại giá từ scheduleId/seat/foods)
     bookingApi
-      .createPaymentUrl(finalTotal, orderInfo)
+      .createPaymentUrl({
+        bookingInfo: orderInfo,
+        scheduleId: param.maLichChieu,
+        listSeatIds: selectedSeatIds,
+        foods: (selectedFoods || []).map((f) => ({ foodId: f.id, quantity: f.quantity })),
+      })
       .then((res) => {
         const paymentUrl = res.data?.url || res.data?.data || res.data;
         if (paymentUrl && typeof paymentUrl === "string") {

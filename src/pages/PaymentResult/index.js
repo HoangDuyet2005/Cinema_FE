@@ -29,51 +29,63 @@ export default function PaymentResult() {
         });
       }
 
-      if (responseCode === "00") {
-        // 1. Lưu vé và bắp nước vào CSDL
-        bookingApi
-          .postDatVe({
-            userId,
-            scheduleId,
-            listSeatIds,
-            foods,
-          })
-          .then(async (res) => {
-            const createdBill = res?.data?.data || res?.data;
-            const billId = createdBill?.id;
-
-            // Giải phóng in-memory holding
+      // Xác minh lại chữ ký (vnp_SecureHash) với BE trước khi tin vào kết quả trên URL - trước đây
+      // chỉ đọc vnp_ResponseCode từ query string, cho phép ai đó tự gõ URL này để lấy vé miễn phí
+      // mà không cần thanh toán thật.
+      bookingApi
+        .verifyPaymentReturn(searchParams)
+        .then((verifyRes) => {
+          const { valid, responseCode: verifiedCode } = verifyRes?.data || {};
+          if (!valid || verifiedCode !== "00" || responseCode !== "00") {
             bookingApi.releaseSeats({ scheduleId, seatIds: listSeatIds, userId }).catch(() => {});
+            alert(
+              valid
+                ? "Giao dịch thanh toán chưa hoàn tất hoặc đã bị hủy."
+                : "Không thể xác minh giao dịch thanh toán (chữ ký không hợp lệ)."
+            );
+            history.replace(`/datvechitiet/${scheduleId}/1/1/2026-08-21/1/19:00:00`);
+            return;
+          }
 
-            // Lấy thông tin lịch chiếu để quay về đúng trang đặt vé chi tiết ở Bước Xác Nhận
-            try {
-              const schedRes = await bookingApi.getScheduleById(scheduleId);
-              const sched = schedRes?.data?.data || schedRes?.data;
-              const bId = sched?.branch?.id || 1;
-              const mId = sched?.movie?.id || 1;
-              const sDate = sched?.startDate || "2026-08-21";
-              const rId = sched?.room?.id || 1;
-              const sTime = sched?.startTime || "19:00:00";
+          // 1. Lưu vé và bắp nước vào CSDL (chỉ sau khi đã xác minh giao dịch VNPay hợp lệ)
+          bookingApi
+            .postDatVe({ userId, scheduleId, listSeatIds, foods })
+            .then(async (res) => {
+              const createdBill = res?.data?.data || res?.data;
+              const billId = createdBill?.id;
 
-              history.replace(
-                `/datvechitiet/${scheduleId}/${bId}/${mId}/${sDate}/${rId}/${sTime}?step=confirm&billId=${billId}&transNo=${transactionNo}&bank=${bankCode}`
-              );
-            } catch (err) {
-              history.replace(
-                `/datvechitiet/${scheduleId}/1/1/2026-08-21/1/19:00:00?step=confirm&billId=${billId}`
-              );
-            }
-          })
-          .catch((err) => {
-            console.error("Lỗi khi lưu đơn hàng:", err);
-            history.replace("/");
-          });
-      } else {
-        // Thanh toán thất bại hoặc hủy -> Giải phóng ghế và quay về trang chọn ghế
-        bookingApi.releaseSeats({ scheduleId, seatIds: listSeatIds, userId }).catch(() => {});
-        alert("Giao dịch thanh toán chưa hoàn tất hoặc đã bị hủy.");
-        history.replace(`/datvechitiet/${scheduleId}/1/1/2026-08-21/1/19:00:00`);
-      }
+              // Giải phóng in-memory holding
+              bookingApi.releaseSeats({ scheduleId, seatIds: listSeatIds, userId }).catch(() => {});
+
+              // Lấy thông tin lịch chiếu để quay về đúng trang đặt vé chi tiết ở Bước Xác Nhận
+              try {
+                const schedRes = await bookingApi.getScheduleById(scheduleId);
+                const sched = schedRes?.data?.data || schedRes?.data;
+                const bId = sched?.branch?.id || 1;
+                const mId = sched?.movie?.id || 1;
+                const sDate = sched?.startDate || "2026-08-21";
+                const rId = sched?.room?.id || 1;
+                const sTime = sched?.startTime || "19:00:00";
+
+                history.replace(
+                  `/datvechitiet/${scheduleId}/${bId}/${mId}/${sDate}/${rId}/${sTime}?step=confirm&billId=${billId}&transNo=${transactionNo}&bank=${bankCode}`
+                );
+              } catch (err) {
+                history.replace(
+                  `/datvechitiet/${scheduleId}/1/1/2026-08-21/1/19:00:00?step=confirm&billId=${billId}`
+                );
+              }
+            })
+            .catch((err) => {
+              console.error("Lỗi khi lưu đơn hàng:", err);
+              history.replace("/");
+            });
+        })
+        .catch((err) => {
+          console.error("Lỗi khi xác minh giao dịch VNPay:", err);
+          bookingApi.releaseSeats({ scheduleId, seatIds: listSeatIds, userId }).catch(() => {});
+          history.replace(`/datvechitiet/${scheduleId}/1/1/2026-08-21/1/19:00:00`);
+        });
     } else {
       history.replace("/");
     }
