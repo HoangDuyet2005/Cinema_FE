@@ -102,19 +102,10 @@ export default function PayMent() {
       Swal.fire("Thông báo", "Vui lòng nhập mã giảm giá", "info");
       return;
     }
-    if (code === "CINEMA10" || code === "WORLD10" || code === "DISCOUNT10") {
-      const discount = Math.round(amount * 0.1);
-      setDiscountAmount(discount);
-      setAppliedPromo(code);
-      Swal.fire("Thành công", `Áp dụng mã ${code} thành công! Giảm 10% (-${discount.toLocaleString("vi-VN")} đ)`, "success");
-    } else if (code === "CINEMA20" || code === "GIAM20K" || code === "CGV2026") {
-      const discount = Math.min(amount, 20000);
-      setDiscountAmount(discount);
-      setAppliedPromo(code);
-      Swal.fire("Thành công", `Áp dụng mã ${code} thành công! Giảm 20.000 đ`, "success");
-    } else {
-      Swal.fire("Mã không hợp lệ", "Mã giảm giá không chính xác hoặc đã hết hạn.", "error");
-    }
+    // Các mã giảm giá cứng trước đây (CINEMA10, GIAM20K, CGV2026...) chỉ trừ tiền trên giao diện, còn
+    // backend vẫn thu đủ giá -> khách thấy giá đã giảm nhưng bị trừ nguyên giá. Chưa có hệ thống mã
+    // khuyến mãi phía server thì không nhận mã nào.
+    Swal.fire("Mã không hợp lệ", "Mã giảm giá không chính xác hoặc đã hết hạn.", "error");
   };
 
   const handleRemovePromo = () => {
@@ -511,7 +502,7 @@ export default function PayMent() {
               <div style={{ display: "flex", gap: "8px" }}>
                 <input
                   type="text"
-                  placeholder="Nhập mã (VD: CINEMA10)"
+                  placeholder="Nhập mã giảm giá"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   style={{

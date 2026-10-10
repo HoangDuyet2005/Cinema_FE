@@ -236,10 +236,9 @@ export default function LichChieuDesktop() {
               const dateParts = day.split("-");
               const shortDate = `${dateParts[2]}/${dateParts[1]}`;
 
-              let dayName = formatted.dayToday;
-              if (idx === 0 && dateStartIndex === 0) {
-                dayName = "Hôm Nay";
-              }
+              // Chỉ ghi "Hôm Nay" khi đúng là ngày hôm nay (trước đây gắn cứng cho ô đầu tiên, nên khi
+              // suất hôm nay đã chiếu hết và ô đầu là ngày mai, ngày mai bị ghi nhầm thành "Hôm Nay")
+              const dayName = formatted.dayToday === "Hôm nay" ? "Hôm Nay" : formatted.dayToday;
 
               return (
                 <div

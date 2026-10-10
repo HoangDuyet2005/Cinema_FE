@@ -49,7 +49,8 @@ export default function PaymentResult() {
 
           // 1. Lưu vé và bắp nước vào CSDL (chỉ sau khi đã xác minh giao dịch VNPay hợp lệ)
           bookingApi
-            .postDatVe({ userId, scheduleId, listSeatIds, foods })
+            // Gửi kèm toàn bộ tham số VNPay trả về để BE tự xác minh lại đã thanh toán đúng đơn này
+            .postDatVe({ userId, scheduleId, listSeatIds, foods, paymentProof: Object.fromEntries(searchParams.entries()) })
             .then(async (res) => {
               const createdBill = res?.data?.data || res?.data;
               const billId = createdBill?.id;

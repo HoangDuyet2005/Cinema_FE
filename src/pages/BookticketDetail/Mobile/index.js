@@ -89,20 +89,29 @@ export default function Mobile(cPhim) {
             !successBookingTicketMessage &&
             !errorBookTicketMessage
           ) {
-            let userId = taiKhoanNguoiDung
-            let scheduleId = maLichChieu
-            // let list=[]
-            // for(var i=0;i<listSeatIds.length;i++){
-            //   list.push({id:listSeatIds[i]})
-            // }
-            let listSeatIds=[]
-            for(var i = 0;i < danhSachVe.length; i++){
-              listSeatIds.push(danhSachVe[i].id)
-            }
-            console.log("Gửi đi: ",userId, scheduleId, listSeatIds);
-            dispatch(bookTicket({userId, scheduleId, listSeatIds} ));
+            // Thanh toán qua VNPay giống bản desktop. Trước đây bản mobile tạo vé thẳng không qua thanh
+            // toán và báo "thành công" trước cả khi server trả lời -> đặt vé miễn phí được.
+            const userId = currentUser?.data?.id || currentUser?.id || taiKhoanNguoiDung;
+            const scheduleId = maLichChieu || param.maLichChieu;
+            const listSeatIds = (danhSachVe || []).map((ve) => ve.id);
+            bookingApi
+              .createPaymentUrl({
+                bookingInfo: `PAY_${userId}_${scheduleId}_${listSeatIds.join("-")}_0`,
+                scheduleId,
+                listSeatIds,
+              })
+              .then((res) => {
+                const paymentUrl = res?.data?.url;
+                if (paymentUrl) {
+                  window.location.href = paymentUrl;
+                } else {
+                  Swal.fire("Lỗi", "Không lấy được đường dẫn thanh toán VNPay!", "error");
+                }
+              })
+              .catch((err) => {
+                Swal.fire("Không thể thanh toán", err.response?.data?.message || "Không kết nối được cổng thanh toán!", "error");
+              });
           }
-          Swal.fire('Đặt vé thành công!', '', 'success')
         } else if (result.isDenied) {
           Swal.fire('Okay, đã hủy đặt vé!', '', 'info')
         }
